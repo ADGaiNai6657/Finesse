@@ -1,0 +1,7 @@
+/build/
+/cmake-build-*/
+/results/
+/tmp/
+/.idea/
+.DS_Store
+__pycache__/

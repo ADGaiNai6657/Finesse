@@ -1,0 +1,3 @@
+Version: D-15/v1
+UTF-8 Finesse-Gear/NTransform/v1/{i}, decimal i=0..11, no padding or newline.
+SHA-256: m=LE32(digest[0:4])|1; a=LE32(digest[4:8]). Offline only.

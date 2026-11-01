@@ -1,0 +1,10 @@
+#pragma once
+inline constexpr auto CODE_REVISION = R"info(@CODE_REVISION@)info";
+inline constexpr auto SOURCE_DIGEST = R"info(@SOURCE_DIGEST@)info";
+inline constexpr auto SOURCE_STATE = R"info(@SOURCE_STATE@)info";
+inline constexpr auto SOURCE_FILES_CSV = R"info(@SOURCE_FILES_CSV@)info";
+inline constexpr auto PARAMETER_FILE_SHA256 = R"info(@PARAMETER_FILE_SHA256@)info";
+inline constexpr auto GEAR_TABLE_SHA256 = R"info(@GEAR_TABLE_SHA256@)info";
+inline constexpr auto COMPILER_INFO = R"info(@COMPILER_INFO@)info";
+inline constexpr auto BUILD_TYPE = R"info(@BUILD_TYPE@)info";
+inline constexpr auto BUILD_OPTIONS = R"info(@BUILD_OPTIONS@)info";
