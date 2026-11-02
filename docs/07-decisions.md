@@ -67,3 +67,11 @@ D-14 已冻结为上述方案：不在子块边界重置 Gear，不将 Finesse f
 ## D-18：空文件与清单重放的摘要集合
 
 用户明确回复“批准 D-18”。空文件仍产生零个 chunk；`checksums.csv` 只包含清单本身和实际引用源文件的摘要，重放继续严格拒绝额外/缺失项。新增 `source-checksums.csv` 保存本次全部源文件（含空文件）的路径、长度、SHA-256，在 `run.txt` 记录该文件摘要。
+
+## D-19：暂用 TTTD-S 数据集并以相对路径读取
+
+用户指定暂时使用原 TTTD-S 的 Dataset，并使用相对路径；进一步明确选择“两组分别运行，排除 macOS 元数据（建议）”。按 [11-tttd-dataset.md](11-tttd-dataset.md) 使用同级 `TTTD-S_Experiments/DataSet`，分别处理压缩包组与源码组，排除 `.DS_Store` 和 `._*`。配置与输入列表使用相对路径，原数据只读，算法仍用 D-16 FastCDC；每轮完整遍历一次，单次预热、五次正式测量，开启独立跨槽诊断。D-13 继续延后。
+
+## D-20：当前数据切换为 FastCDC 四组 Dataset
+
+用户明确指示“改用 FastCDC 的四组 Dataset”，据此切换为 `../FastCDC/Dataset/DataSet_1`～`DataSet_4`，见 [12-fastcdc-dataset.md](12-fastcdc-dataset.md)。四组分别运行，沿用相对路径、只读原数据、排除 `.DS_Store`/`._*`、完整遍历一次、一次预热与五次测量、独立诊断。第四组按来源标为 synthetic，记录生成参数和 seed=20260917。D-19 保留为历史记录；D-13 继续延后。

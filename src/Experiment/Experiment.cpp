@@ -188,7 +188,7 @@ auto runExperiment(const ExperimentConfig &config) -> void {
     }
     std::string metadata;
     try {
-        metadata = "timestamp=" + utcTimestamp() + "\ndocumentVersion=0.3+D-17+D-18\napprovals=D-01..D-12,D-14..D-18\n";
+        metadata = "timestamp=" + utcTimestamp() + "\ndocumentVersion=0.3+D-17+D-18+D-19+D-20\napprovals=D-01..D-12,D-14..D-20\n";
         for (const auto &[key, value] : config.values) {
             metadata += key + "=" + value + "\n";
         }

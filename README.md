@@ -4,6 +4,8 @@
 
 首期包含核心算法、固定 12 对参数、完整 SF 编码、CDC 适配、raw/manifest 输入、SHA-256 完整性校验、单次预热与五次轮换测量、诊断索引、CTest。完整 Delta 压缩系统仍按 D-13 延后；没有编码器、恢复存储、DCR/DCE 或系统吞吐量结果。
 
+准备阅读和审查代码时，先看 [代码 Review 导读](docs/13-code-review-guide.md)，按阅读路线核对算法、输入、计时和结果。
+
 ## 构建与测试
 
 需要 CMake ≥ 4.2、C++20 编译器、OpenSSL Crypto 开发库和 Python 3.9+（测试与样例生成）。算法与实验驱动不调用 Python。
@@ -52,5 +54,31 @@ SF 计时包含从字节扫描到 SF 哈希及相同格式输出写入，不包�
 清单重放时设 `inputMode=manifest`，`inputPath` 指向已有 `manifest.csv`，保留同目录的 `checksums.csv`，并使用新的结果目录和 runId。清单按行顺序加载，源文件必须仍能按记录路径访问，摘要或范围错误会失败。
 
 当前模式将输入和输出缓冲全部放入内存；没有隐式分批模式。内存不足会失败，用户应选择可驻留内存的数据量。长度小于 12 的块两算法统一排除并统计；没有有效块时不输出性能汇总。输出目录已存在时拒绝覆盖；已创建目录中的失败运行保留 `status=failed` 和原因，不保留正常汇总。
+
+## 当前数据：FastCDC 四组 Dataset（D-20）
+
+使用同级 `../FastCDC/Dataset`，四组分别运行。所有配置和输入列表均使用相对路径；原数据只读，沿用 `.DS_Store`、`._*` 排除规则，分块参数仍为 D-16。
+
+| 组 | 内容 | 文件数 | 字节数 | 配置 |
+| --- | --- | --- | --- | --- |
+| DataSet_1 | Emacs 压缩包 | 5 | 179761540 | [配置 1](configs/fastcdc-dataset-1.conf) |
+| DataSet_2 | Emacs 源码（LNX 类） | 16982 | 636563018 | [配置 2](configs/fastcdc-dataset-2.conf) |
+| DataSet_3 | 未压缩 tar（TAR 类） | 5 | 650055680 | [配置 3](configs/fastcdc-dataset-3.conf) |
+| DataSet_4 | 合成备份（SYN 类） | 8 | 268435456 | [配置 4](configs/fastcdc-dataset-4.conf) |
+
+第四组标为 `synthetic`，固定种子 20260917、规模与来源生成器均在配置中记录；当前文件已做内存重现核验。各组只报告本项目 Gear 变体的 SF 性能。
+
+```sh
+python3 scripts/prepare_fastcdc_inputs.py
+cmake --build build/release -j 4
+build/release/Finesse --config configs/fastcdc-dataset-1.conf
+build/release/Finesse --config configs/fastcdc-dataset-2.conf
+build/release/Finesse --config configs/fastcdc-dataset-3.conf
+build/release/Finesse --config configs/fastcdc-dataset-4.conf
+```
+
+路径列表在 `configs/inputs-fastcdc/`，相对列表目录读取原数据；配置再相对引用列表。脚本按项目目录解析路径，即使从其他工作目录启动也保持一致。现有清单无需重复生成；数据变更时应使用新清单目录和新配置。每组每轮完整遍历一次，预热一次、正式五次，诊断独立于计时；四组顺序运行。结果为 `results/fastcdc-dataset-N-release-v1/`，存在则拒绝覆盖。详细来源与相对路径约定见 [当前数据说明](docs/12-fastcdc-dataset.md)。
+
+TTTD-S 两组配置与产物保留为 [D-19 历史方案](docs/11-tttd-dataset.md)。
 
 设计、审批与来源见 [docs/README.md](docs/README.md)、[D-17/D-18](docs/09-configuration-proposal.md) 和 [源码摘取记录](docs/10-source-provenance.md)。

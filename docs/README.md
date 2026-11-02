@@ -2,6 +2,8 @@
 
 版本：0.3，2026-11-01。首期设计已批准并已据此建立实现；新增 D-17/D-18 审批记录见 09。后续完整系统 D-13 延后。构建与使用说明见 [根目录 README](../README.md)，测试与运行状态以实际验证记录为准。
 
+准备做代码 Review 时，建议先读 [代码 Review 导读](13-code-review-guide.md)：包含阅读顺序、模块职责、关键调用路径和逐项核对清单。
+
 ## 已确认的范围
 
 - 首期实现 Finesse 与 N-transform SF 的算法对比，预留完整去重后 Delta 压缩系统接口。用户已确认，见 D-01。
@@ -26,6 +28,9 @@
 | [07-decisions.md](07-decisions.md) | 审批记录、待决策方案及其影响 |
 | [09-configuration-proposal.md](09-configuration-proposal.md) | 已批准 D-17 配置、运行样例和 D-18 空文件摘要补充 |
 | [10-source-provenance.md](10-source-provenance.md) | 实际摘取文件摘要与适配边界 |
+| [11-tttd-dataset.md](11-tttd-dataset.md) | D-19 历史方案：TTTD-S 两组数据 |
+| [12-fastcdc-dataset.md](12-fastcdc-dataset.md) | D-20 当前方案：FastCDC 四组数据、分类与相对路径 |
+| [13-code-review-guide.md](13-code-review-guide.md) | 面向代码 Review 的阅读路线、实现细节与核对清单 |
 
 ## 如何使用
 
@@ -35,4 +40,4 @@
 
 首期已建立 `src/`、`tests/`、`configs/`、`scripts/`，原始 Hello World 入口已替换；实际模块与摘取摘要见根目录 README 和 10。
 
-真实数据路径尚未指定；D-17 已批准 synthetic 验收样例的规模、生成器和种子，每次运行记录实际配置。真实数据集实验仍需指定数据路径，不将验收样例当作真实数据集结论。
+当前按 D-20 使用同级 FastCDC 的四组 Dataset，以相对路径读取并排除 macOS 元数据，见 12；第四组明确为 synthetic，D-17 小型 synthetic 样例继续用于算法验收。各组记录实际来源和配置，不将它们当作 Finesse 原始六数据集。
