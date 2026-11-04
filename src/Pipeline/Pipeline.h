@@ -27,10 +27,15 @@ struct ResemblanceIndex {
 };
 
 auto makeResemblanceIndex(std::string_view algorithm, std::string_view profileId) -> ResemblanceIndex;
+// 查询不改变索引；Delta 管线在最终表示为 Raw 时才显式插入。
+auto queryCandidate(const ResemblanceIndex &index, ChunkId chunkId, const SignatureResult &signature,
+                    std::string_view algorithm, std::string_view profileId) -> std::optional<Candidate>;
+auto insertSignature(ResemblanceIndex &index, ChunkId chunkId, const SignatureResult &signature,
+                     std::string_view algorithm, std::string_view profileId) -> void;
 auto queryThenInsert(ResemblanceIndex &index, ChunkId chunkId, const SignatureResult &signature,
                      std::string_view algorithm, std::string_view profileId) -> std::optional<Candidate>;
 
-// 后续完整系统边界，首期不实现编码器、去重索引或磁盘容器（D-13）。
+// 历史接口边界；实际 Raw/Delta 内容见 EncodedStore，磁盘容器仍待 D-13。
 enum class EncodingKind { Raw, Duplicate, Delta };
 struct ChunkRecord {
     ChunkId chunkId = 0;

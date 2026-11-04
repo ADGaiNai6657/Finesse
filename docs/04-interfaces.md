@@ -80,6 +80,24 @@ auto groupNTransformFeatures(const FeatureValues &features)
 
 Gear 状态采用来源中的 `std::uint64_t` 值或引用，`gearRoll` 返回新状态，`updateGearHash` 回写引用。状态归属于当前 chunk，不与 CDC 或其他 chunk 共享。
 
+## D-21 已接入的精确去重与存储接口
+
+实际声明见 [Hash.h](../src/Hash/Hash.h)、[ChunkStore.h](../src/ChunkStore/ChunkStore.h)、[Experiment.h](../src/Experiment/Experiment.h)。
+
+| 接口/类型 | 契约 |
+| --- | --- |
+| `sha1(string_view)` | 完整 20 字节 SHA-1；EVP 错误抛出异常，不以失败摘要继续查重 |
+| `makeChunkStore(sha1)` | 本次实验独占的空池；真实运行固定使用 SHA-1，测试可注入碰撞函数 |
+| `findDuplicate(store, ChunkView)` | 查 SHA-1 桶后按长度和字节确认，返回 optional StoredChunkId；不插入、不计数 |
+| `storeChunk(store, ChunkView)` | 已有内容返回同一 storedId；新内容才复制 payload；计数或分配失败时不提交半次插入 |
+| `readStoredChunk / storedChunkView` | 只读借用自持有的唯一 payload，普通追加不使旧视图失效 |
+| `resetStore` | 清空池与统计，所有旧视图失效；禁止在仍使用视图的测量中调用 |
+| `SourceFile` | 只保留 path、length、SHA-256，无原文件字节所有权 |
+| `InputChunk` | 每次出现的 chunkId、来源、范围及 storedId/isDuplicate 引用 |
+| `selectSFInput` | unique 取首次出现，all 取所有引用；明确统计所选集合，两个算法共享 |
+
+池内 storedId 按首次出现顺序递增，与原始 chunkId 分离。唯一块内容入池后不可修改，Store 不使用可变全局状态。raw 模式按文件释放源缓冲，manifest 的加载缓冲在返回前全部销毁。SHA-1 碰撞保留不同内容的多个唯一块。完整格式、所有权和计数定义见 [D-21](14-sha1-chunk-store.md)。
+
 ## 哈希配置逻辑字段
 
 下表是必须表达的信息，不是已确定的具体值或 C++ 存储布局。
@@ -95,14 +113,14 @@ Gear 状态采用来源中的 `std::uint64_t` 值或引用，`gearRoll` 返回�
 
 加载后先验证配置完整性，再构建热路径需要的查找表；禁止在每个字节处解析字符串配置。
 
-## 完整系统的预留接口
+## 系统接口与磁盘预留
 
-`[已批准 D-10、D-09；完整系统行为细化待 D-13]` 下表定义逻辑能力，不要求首期创建空实现。后续适配可沿用普通函数加状态结构体。
+`[已批准 D-10、D-09；完整系统行为细化待 D-13]` 下表保留系统逻辑能力名称，并非全部对应同名实际函数；具体已实现接口见本页最后一节。内存精确查重、原文池读取和 SF 候选已有具体接口；Delta 编解码与 EncodedStore 按 D-22～D-24 已实现，磁盘存储继续预留。
 
 | 接口能力 | 输入 | 输出 | 契约 |
 | --- | --- | --- | --- |
 | `readNextChunk` | 输入流状态 | 拥有字节的 chunk / EOF / Error | EOF 与错误分开；来源范围可追溯 |
-| `findDuplicate` | 内容摘要和原始字节 | 可选已有 ChunkId | 与 SF 索引分离；碰撞处理待批准 |
+| `findDuplicate` | Store 和原始字节 | 可选 StoredChunkId | D-21 已批准并实现 SHA-1＋长度/逐字节确认，与 SF 索引分离 |
 | `findFirstMatch` | 算法标识、配置标识、SF | 可选 Candidate | 未匹配不是错误；不返回当前或未来 chunk |
 | `insertSignature` | ChunkId、SF | 插入结果 | 可检索基块和签名绑定；错误不能静默忽略 |
 | `readBaseChunk` | ChunkId | 拥有原始字节的缓冲区 | 不返回仍需解码却伪称原文的数据 |
@@ -115,3 +133,19 @@ Gear 状态采用来源中的 `std::uint64_t` 值或引用，`gearRoll` 返回�
 ## FastCDC 适配契约
 
 [已批准 D-11 来源；具体运行配置见 D-16] 复用 `makeFastCDCConfig(expectedSize,minSize,ncLevel)` 与 `BoundariesFinder(data,positions,config)`。保留上游接口名称与参数结构；适配层将本次新增的一组切点转换为 `[previousCut,cut)` 的 ChunkView，初始 previousCut=0。空文件产生零块；非空文件末切点必须等于文件长度，其余切点严格递增。缓冲区必须覆盖所有 ChunkView 的使用周期。禁止把无进展切点静默跳过后报告成功。
+
+## D-22～D-24 的实际内存接口
+
+| 接口 | 所有权与契约 |
+| --- | --- |
+| `queryCandidate(index,id,signature,algorithm,profile)` | 不改变 index，跨槽 FirstFit，混用配置/非法签名/已插入 ID 拒绝 |
+| `insertSignature(...)` | 同键保留首次插入；Delta 管线仅对最终 Raw 且长度≥12 调用 |
+| `queryThenInsert(...)` | 保留旧诊断的查询后插入所有合格签名行为 |
+| `encodeDelta(base,target)` | 借用输入，返回拥有 VCDIFF 的 string，固定 level6/Adler32/无二级压缩，非 ENOSPC 错误抛异常 |
+| `decodeDelta(base,delta,expectedLength)` | 返回拥有恢复字节的 string，输出长度严格相符，验证上游 Adler32 |
+| `appendEncodedChunk(store,firstChunkId,target,candidate)` | 为一次唯一内容分配连续 encoded ID，真实 encode+decode 全字节比较后选择表示；候选必须为此前合格 Raw；重复不在此层处理 |
+| `buildEncodedStore(input,algorithm)` | 借用已去重输入，按首次出现顺序建立独立结果，返回不含原文借用的 owning EncodedStore |
+| `restoreEncodedChunk(store,id)` | 只依赖编码池；Raw 校验后返回复制，Delta 检查 earlier Raw/base/depth/长度/摘要后解码；非法/损坏抛异常 |
+| `loadDeltaExperimentConfig(path)` / `runDeltaExperiment(config)` | 新入口，16 键严格解析，引用 inputConfig 要求 unique；单次构造、原文池析构后全恢复 |
+
+具体字段、ID 语义、配置和统计见 [15](15-xdelta-pipeline-proposal.md)；`ChunkRecord` 历史磁盘边界不承载真实 payload。EncodedChunk.kind 只有 Raw/Delta，精确重复属于 occurrence 引用，不能再创建 Duplicate payload。所有指针视图只在调用期间借用；恢复结果拥有字节，不返回对临时解码区的视图。

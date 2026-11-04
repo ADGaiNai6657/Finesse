@@ -1,8 +1,10 @@
 # Finesse 实验框架设计文档
 
-版本：0.3，2026-11-01。首期设计已批准并已据此建立实现；新增 D-17/D-18 审批记录见 09。后续完整系统 D-13 延后。构建与使用说明见 [根目录 README](../README.md)，测试与运行状态以实际验证记录为准。
+版本：0.5，2026-11-04。当前 D-21 已批准接入 SHA-1 精确去重、内存唯一块池，默认唯一块 SF，保留 all 对照入口。D-22～D-24 已批准并接入真实 Xdelta 与可恢复内存 Raw/Delta 管线；磁盘容器、400MB LRU、并行及跨进程重载仍待 D-13。构建与使用见 [根目录 README](../README.md)，状态以实际验证记录为准。
 
 准备做代码 Review 时，建议先读 [代码 Review 导读](13-code-review-guide.md)：包含阅读顺序、模块职责、关键调用路径和逐项核对清单。
+
+代理工作约定见 [AGENT.md](../AGENT.md)（[AGENTS.md](../AGENTS.md) 自动入口）。与论文/文档冲突或未批准的取舍必须报告/询问人类，修改实现须同步对应文档。
 
 ## 已确认的范围
 
@@ -10,9 +12,9 @@
 - 代码风格遵从用户指定的 [FastCDC 仓库](https://github.com/ADGaiNai6657/FastCDC)，见 D-02。
 - 对论文 DCE 的矛盾，同时保留剩余比例与节省比例，不直接把其中一项认定为论文 DCE。用户已确认，见 D-03。
 
-首期交付目标是能够对相同 chunk 输入计算两种算法的 features、super-features，验证计算结果，并公平比较 SF 计算速度。相似块匹配可以作为独立的诊断实验；没有编码器和完整输入管线时，不输出 DCR、DCE 或系统吞吐量结论。
+首期交付目标是能够对相同 chunk 输入计算两种算法的 features、super-features，验证计算结果，并公平比较 SF 计算速度。相似块匹配可以作为独立诊断；新增 Delta 入口真实编码、恢复并报告 payload DCR，和 SF 微基准分开。DCE 歧义继续按 D-03 保留，单次质量验证不报告稳定系统吞吐。
 
-已批准改用 GearHash，并从 FastCDC 的 `feature/chunk-store-dedup` 分支摘取基础设施及 CDC。首期对比名称为 **Finesse-Gear / NTransform-Gear**，两者使用同一 FastCDC 输入序列；它们是论文算法的工程变体。首期 D-01～D-12、D-14～D-16 均已批准；具体参数见审批表。首期对全部 CDC 块做微基准，长度小于 12 的块按 D-04 排除，不启用去重输入模式。
+已批准以 Gear 替换 Rabin，并从 FastCDC 功能分支摘取/适配基础设施，名称仍为 Finesse-Gear / NTransform-Gear。D-21 更新原先 D-16 的未去重口径：所有块先经 SHA-1＋长度/字节确认进入唯一池，默认显式 sfInput=unique，all 保留每次出现的对照遍历。两算法共享同一所选集合，短块统一排除；精确存储本身保留唯一短块。
 
 ## 阅读顺序
 
@@ -31,6 +33,9 @@
 | [11-tttd-dataset.md](11-tttd-dataset.md) | D-19 历史方案：TTTD-S 两组数据 |
 | [12-fastcdc-dataset.md](12-fastcdc-dataset.md) | D-20 当前方案：FastCDC 四组数据、分类与相对路径 |
 | [13-code-review-guide.md](13-code-review-guide.md) | 面向代码 Review 的阅读路线、实现细节与核对清单 |
+| [14-sha1-chunk-store.md](14-sha1-chunk-store.md) | D-21：精确查重、内存唯一池、引用与统计契约 |
+| [15-xdelta-pipeline-proposal.md](15-xdelta-pipeline-proposal.md) | 已批准 D-22～D-24：真实 xdelta、Raw/Delta 存储、配置、恢复与指标 |
+| [16-delta-validation.md](16-delta-validation.md) | Debug/Release 验收和四组 Delta 实跑证据 |
 
 ## 如何使用
 

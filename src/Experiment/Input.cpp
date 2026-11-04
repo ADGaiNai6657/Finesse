@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <chrono>
-#include <limits>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -18,7 +17,7 @@ static auto trim(const std::string &value) -> std::string {
 auto loadExperimentConfig(const std::filesystem::path &path) -> ExperimentConfig {
     const std::set<std::string> keys {"profileId", "inputMode", "inputPath", "datasetKind", "datasetDescription",
         "outputDirectory", "runId", "expectedSize", "minSize", "maxSize", "ncLevel", "warmupRuns",
-        "measurementRuns", "iterations", "diagnostics"};
+        "measurementRuns", "iterations", "diagnostics", "sfInput"};
     ExperimentConfig config;
     config.configPath = std::filesystem::canonical(path);
     const auto bytes = readFile(config.configPath);
@@ -51,6 +50,9 @@ auto loadExperimentConfig(const std::filesystem::path &path) -> ExperimentConfig
         || (v.at("diagnostics") != "true" && v.at("diagnostics") != "false")) {
         throw std::invalid_argument("configuration differs from approved D-14/D-16/D-17");
     }
+    if (v.at("sfInput") != "unique" && v.at("sfInput") != "all") {
+        throw std::invalid_argument("sfInput must be unique or all (D-21)");
+    }
     for (const unsigned char c : v.at("runId")) {
         if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-')) {
             throw std::invalid_argument("runId must use ASCII letters, digits, underscore or hyphen");
@@ -67,7 +69,8 @@ auto loadExperimentConfig(const std::filesystem::path &path) -> ExperimentConfig
 }
 
 static auto loadSource(ExperimentInput &input, const std::filesystem::path &path,
-                       std::map<std::filesystem::path, std::size_t> &indices) -> std::size_t {
+                       std::map<std::filesystem::path, std::size_t> &indices,
+                       std::vector<std::string> &buffers) -> std::size_t {
     const auto canonical = std::filesystem::canonical(path);
     if (!std::filesystem::is_regular_file(canonical)) {
         throw std::invalid_argument("input is not a regular file: " + path.string());
@@ -78,14 +81,32 @@ static auto loadSource(ExperimentInput &input, const std::filesystem::path &path
     auto bytes = readFile(canonical);
     const auto digest = sha256(bytes);
     const auto index = input.files.size();
-    input.files.push_back({canonical, std::move(bytes), digest});
+    input.files.push_back({canonical, bytes.size(), digest});
+    buffers.push_back(std::move(bytes));
     indices.emplace(canonical, index);
     return index;
+}
+
+static auto bindChunk(ExperimentInput &input, InputChunk chunk, const std::string &bytes) -> void {
+    const ChunkView view {reinterpret_cast<const std::uint8_t *>(bytes.data() + chunk.offset),
+                          static_cast<std::size_t>(chunk.length)};
+    const auto start = std::chrono::steady_clock::now();
+    const auto stored = storeChunk(input.store, view);
+    input.dedupElapsedNs += std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now() - start).count();
+    chunk.storedId = stored.storedId;
+    chunk.isDuplicate = stored.isDuplicate;
+    if (!stored.isDuplicate) {
+        input.uniqueChunkPositions.push_back(input.chunks.size());
+    }
+    input.chunks.push_back(chunk);
 }
 
 auto loadExperimentInput(const ExperimentConfig &config) -> ExperimentInput {
     ExperimentInput input;
     std::map<std::filesystem::path, std::size_t> indices;
+    // 仅加载阶段持有源文件缓冲；返回的 ExperimentInput 只保留唯一 payload。
+    std::vector<std::string> buffers;
     const auto inputBytes = readFile(config.inputPath);
     requireUtf8(inputBytes);
     if (config.values.at("inputMode") == "raw") {
@@ -109,16 +130,18 @@ auto loadExperimentInput(const ExperimentConfig &config) -> ExperimentInput {
         std::sort(paths.begin(), paths.end());
         const auto cdc = makeFastCDCConfig(8192, 2048, 0);
         for (const auto &path : paths) {
-            const auto index = loadSource(input, path, indices);
+            const auto index = loadSource(input, path, indices, buffers);
             const auto start = std::chrono::steady_clock::now();
-            const auto cuts = chunkBoundaries(input.files[index].bytes, cdc);
+            const auto cuts = chunkBoundaries(buffers[index], cdc);
             input.cdcElapsedNs += std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::steady_clock::now() - start).count();
             std::size_t previous = 0;
             for (const auto cut : cuts) {
-                input.chunks.push_back({static_cast<ChunkId>(input.chunks.size()), index, previous, cut - previous});
+                bindChunk(input, {static_cast<ChunkId>(input.chunks.size()), index, previous, cut - previous}, buffers[index]);
                 previous = cut;
             }
+            // 已有块均由 Store 自持有，逐文件释放原始缓冲，避免保留重复内容。
+            std::string {}.swap(buffers[index]);
         }
     } else {
         const auto rows = parseCsv(inputBytes);
@@ -135,13 +158,13 @@ auto loadExperimentInput(const ExperimentConfig &config) -> ExperimentInput {
             if (!ids.insert(id).second) {
                 throw std::invalid_argument("duplicate chunk ID");
             }
-            const auto index = loadSource(input, pathFrom(config.inputPath.parent_path(), row[1]), indices);
+            const auto index = loadSource(input, pathFrom(config.inputPath.parent_path(), row[1]), indices, buffers);
             const auto offset = parseUnsigned(row[2]);
             const auto length = parseUnsigned(row[3]);
-            if (checkedAdd(offset, length) > input.files[index].bytes.size()) {
+            if (checkedAdd(offset, length) > input.files[index].length) {
                 throw std::invalid_argument("manifest chunk exceeds source file");
             }
-            input.chunks.push_back({id, index, offset, length});
+            bindChunk(input, {id, index, offset, length}, buffers[index]);
         }
         const auto checksums = parseCsv(readFile(config.inputPath.parent_path() / "checksums.csv"));
         if (checksums.empty() || checksums.front() != std::vector<std::string> {"file", "sha256"}) {
@@ -177,5 +200,40 @@ auto loadExperimentInput(const ExperimentConfig &config) -> ExperimentInput {
             input.excludedChunks = checkedAdd(input.excludedChunks, 1);
         }
     }
+    if (input.store.stats.totalBytes != input.inputBytes || input.store.stats.totalChunks != input.chunks.size()
+        || input.store.stats.uniqueChunks != input.uniqueChunkPositions.size()) {
+        throw std::runtime_error("chunk store and input accounting differ");
+    }
     return input;
+}
+
+auto inputChunkView(const ExperimentInput &input, const InputChunk &chunk) -> ChunkView {
+    const auto view = storedChunkView(input.store, chunk.storedId);
+    if (view.length != chunk.length) {
+        throw std::runtime_error("stored payload length differs from occurrence");
+    }
+    return view;
+}
+
+auto selectSFInput(const ExperimentInput &input, const std::string_view mode) -> SFInputSelection {
+    SFInputSelection selected;
+    if (mode == "unique") {
+        selected.chunkPositions = input.uniqueChunkPositions;
+    } else if (mode == "all") {
+        selected.chunkPositions.reserve(input.chunks.size());
+        for (std::size_t i = 0; i < input.chunks.size(); ++i) {
+            selected.chunkPositions.push_back(i);
+        }
+    } else {
+        throw std::invalid_argument("sfInput must be unique or all");
+    }
+    for (const auto position : selected.chunkPositions) {
+        const auto &chunk = input.chunks.at(position);
+        selected.inputBytes = checkedAdd(selected.inputBytes, chunk.length);
+        if (chunk.length < FEATURE_COUNT) {
+            selected.excludedChunks = checkedAdd(selected.excludedChunks, 1);
+            selected.excludedBytes = checkedAdd(selected.excludedBytes, chunk.length);
+        }
+    }
+    return selected;
 }

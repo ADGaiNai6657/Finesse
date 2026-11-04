@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 auto validateHashConfig(const HashConfig &config) -> bool {
-    const HashConfig approved;
+    constexpr HashConfig approved;
     return config.profileId == approved.profileId && config.hashKind == approved.hashKind
         && config.stateBits == approved.stateBits && config.gearTableRevision == approved.gearTableRevision
         && config.initialValue == approved.initialValue && config.updateBeforeSample
@@ -22,6 +22,7 @@ auto validateChunk(const ChunkView chunk, const HashConfig &config) -> ExtractSt
     return chunk.length < FEATURE_COUNT ? ExtractStatus::UnsupportedLength : ExtractStatus::Ok;
 }
 
+//返回chunk中第index个的边界所在下标
 auto subchunkBoundary(const std::size_t length, const std::size_t index) -> std::size_t {
     if (index > FEATURE_COUNT) {
         throw std::out_of_range("subchunk index exceeds FEATURE_COUNT");

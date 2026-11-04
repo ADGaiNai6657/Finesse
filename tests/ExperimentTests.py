@@ -47,7 +47,7 @@ def main():
         base = dict(profileId="finesse-gear-v1", inputMode="raw", inputPath="files.txt",
             datasetKind="synthetic", datasetDescription="CLI correctness fixture; xorshift32 seed=0x13579bdf bytes=131089 plus 3 byte short file",
             outputDirectory="raw", runId="integration", expectedSize="8192", minSize="2048", maxSize="65536",
-            ncLevel="0", warmupRuns="1", measurementRuns="5", iterations="2", diagnostics="true")
+            ncLevel="0", warmupRuns="1", measurementRuns="5", iterations="2", diagnostics="true", sfInput="all")
 
         def run(name, updates=None, success=True, suffix=""):
             values = base | (updates or {})
@@ -108,6 +108,7 @@ def main():
         check(subprocess.run([str(binary), "--config", str(path)], capture_output=True).returncode != 0, "missing key")
         run("zero-min", {"minSize": "0", "outputDirectory": "zero-min"}, success=False)
         run("zero-iterations", {"iterations": "0", "outputDirectory": "zero-iterations"}, success=False)
+        run("invalid-sf-input", {"sfInput": "auto", "outputDirectory": "invalid-sf-input"}, success=False)
         run("overflow", {"iterations": str(2**64 - 1), "outputDirectory": "overflow"}, success=False)
         check("status=failed\n" in (root / "overflow/run.txt").read_text(), "overflow failed status")
         (root / "onlyshort.txt").write_text("short.bin\n")

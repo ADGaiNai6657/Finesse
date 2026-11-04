@@ -3,6 +3,8 @@
 用户已明确回复“批准 D-17 全部方案”。这是 `06-experiments.md` 要求在实现前补全并批准的具体配置方案。
 算法语义沿用 D-01～D-12、D-14～D-16，不改动已批准事项。
 
+后续 D-21 已批准启用精确去重，新增下面的必填 sfInput，并更新原来不启用 SHA-1 的部分；本页配置表据此列出当前入口。
+
 ## 入口与配置
 
 命令：`Finesse --config <file>`。所有键必填、仅出现一次；未知键、空值和不合法值报错。
@@ -26,6 +28,7 @@ UTF-8 文本，每行 `key=value`，空行和以 `#` 开头的整行注释忽略
 | `measurementRuns` | 固定 `5`，每轮交替先后顺序 |
 | `iterations` | 正整数，每次测量对相同 chunk 序列完整遍历的次数，按实际次数累计字节 |
 | `diagnostics` | `true` 或 `false`；独立于 SF 计时的跨槽匹配 |
+| `sfInput` | D-21：`unique` 或 `all`，当前配置明确写 unique；两种模式都启用唯一存储，决定 SF 遍历哪个集合 |
 
 不再用独立键重复设定 Gear 表、编码、模数等冻结语义；profileId 对应完整 HashConfig，全部字段展开记录在 run.txt。
 12 对参数作为版本化 CSV 随源码保存，严格校验，并在每次结果目录导出实用值与摘要。
@@ -35,8 +38,9 @@ UTF-8 文本，每行 `key=value`，空行和以 `#` 开头的整行注释忽略
 raw 模式只接受显式文件，不递归遍历目录；重复路径报错，重复内容保留。
 manifest 表头固定为 `chunkId,file,offset,length`；文件路径相对清单目录。
 重放 manifest 时，要求旁边存在 `checksums.csv`（`file,sha256`），记录清单和每个源文件的 SHA-256；缺失、额外、重复记录或校验失败均终止。
-SHA-256 通过系统已安装的 OpenSSL Crypto 实现，不引入 SHA-1 去重。
+SHA-256 通过 OpenSSL Crypto 实现完整性校验；D-21 另用 SHA-1＋逐字节确认进行精确去重，两种用途分离。
 每次运行导出 manifest.csv、checksums.csv、run.txt、parameters.csv、measurements.csv、summary.csv；开启诊断另导出 diagnostics.csv。
+按 D-21 另导出 stored-chunks.csv、chunk-references.csv、deduplication.csv；内存 pool 承载唯一 payload，这三份 CSV 保存元信息、引用及统计。measurement schema=2 的追加字段见 14。
 summary 使用五次测量的算术均值、总体标准差，以及 meanBaselineSeconds/meanFinesseSeconds。
 没有有效 chunk 时失败并记录原因，不输出零分母性能结论。
 
@@ -50,3 +54,7 @@ summary 使用五次测量的算术均值、总体标准差，以及 meanBaselin
 ## D-18 补充（已批准）
 
 用户明确回复“批准 D-18”：`checksums.csv` 仅含清单与实际引用源文件；`source-checksums.csv` 另存全部源文件（含零 chunk 的空文件）的路径、长度与摘要，`run.txt` 保存该文件摘要。此补充解决空文件在严格重放摘要集合中的归属，不改变空文件分块行为。
+
+## D-24 独立 Delta 入口
+
+本页配置继续用于 `--config` 的 SF 微基准；新增 `--delta-config` 使用独立的 16 键配置，相对 inputConfig 引用本页数据配置，要求 sfInput=unique，仅导入输入/CDC/Gear 和数据说明。不会执行原 SF 的 iterations/预热/测量/诊断，也不会使用原输出目录。新入口的全部键与输出契约见 [15](15-xdelta-pipeline-proposal.md)，示例为 configs/fastcdc-dataset-N-delta.conf。D-18 的空文件/源摘要契约继续沿用。

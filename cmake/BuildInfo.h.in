@@ -8,3 +8,6 @@ inline constexpr auto GEAR_TABLE_SHA256 = R"info(@GEAR_TABLE_SHA256@)info";
 inline constexpr auto COMPILER_INFO = R"info(@COMPILER_INFO@)info";
 inline constexpr auto BUILD_TYPE = R"info(@BUILD_TYPE@)info";
 inline constexpr auto BUILD_OPTIONS = R"info(@BUILD_OPTIONS@)info";
+
+inline constexpr auto XDELTA_SOURCE_MANIFEST_SHA256 = R"info(@XDELTA_VENDOR_DIGEST@)info";
+inline constexpr auto XDELTA_SOURCE_FILES_CSV = R"info(@XDELTA_SOURCE_FILES_CSV@)info";

@@ -9,7 +9,7 @@
 - 本机 FastCDC HEAD 与该远端提交相同，工作区检查未显示修改。
 - `main` 的 `de52ffdf...` 仅为初版，不再作为摘取基准。
 
-本文件记录代码摘取设计。首期现已原样摘取 GearHash 与 BreakingApart；实际文件 SHA-256 和新增适配见 10，不把本文件历史核实记录当作运行结果。
+GearHash 与 BreakingApart 为原样摘取；D-21 的 Hash/ChunkStore 参考同一固定提交的 SHA-1、候选桶与字节确认语义进行适配，实际来源与差异见 10。
 
 ## 模块和复用边界
 
@@ -17,8 +17,8 @@
 | --- | --- | --- |
 | `src/GearHash/GearHash.h/.cpp` | 256 项 64 位表，`gearRoll`，`updateGearHash` | CDC 与两个 SF 算法共用相同更新原语，各自持有独立状态 |
 | `src/BreakingApart/BreakingApart.h/.cpp` | `BreakingApartConfig`、`makeFastCDCConfig`、`BoundariesFinder` | 首期 CDC 输入适配，保留切点语义 |
-| `src/Hash/Hash.h/.cpp` | OpenSSL EVP SHA-1 封装 | 启用去重输入模式或后续系统时复用，不用 Gear 代替精确内容摘要 |
-| `src/ChunkStore/ChunkStore.h/.cpp` | 唯一块池、SHA-1 索引、出现记录、`resetStore` | 去重输入模式的来源；避免算法提取依赖其可变全局状态 |
+| `src/Hash/Hash.h/.cpp` | OpenSSL EVP SHA-1 封装 | D-21 已适配：完整 20 字节摘要，检查 EVP 错误，无线程局部裸指针 |
+| `src/ChunkStore/ChunkStore.h/.cpp` | 唯一块池、SHA-1 索引、出现记录、`resetStore` | D-21 已适配为实验独占 Store、storedId 引用、逐字节确认、计数与失败回滚 |
 | `src/main.cpp` | 文件读取与排序、CDC 调用、统计与 CSV | 摘取输入驱动思路及必要函数，适配到已批准 Experiment 协议 |
 | `CMakeLists.txt` | C++20、OpenSSL 查找和链接 | 按所启用模块选择依赖，保留本工程 CMake 4.2 |
 
@@ -32,7 +32,7 @@ CDC 每个 chunk 开始 hash=0，从 `last+MinSize` 才开始滚动；命中时�
 
 `makeFastCDCConfig` 将 NC 等级限制在 0～3，最大长度为 expected×8。来源 CLI 默认 expected=8192、min=expected/4、NC=0；NC 开启时 NormalSize=max(expected,min+expected/2)。这些是源码行为，不代表 Finesse 原论文设置。已批准 D-16 沿用默认数值，并在配置中显式保存实际掩码。
 
-源驱动将路径排序后逐文件分块；内容索引可跨文件保留。是否启用其去重模式必须与“所有 CDC chunk”微基准区分。`ChunkStore` 暴露全局状态，实验运行边界必须 reset，不能让预热或上一算法污染下一次测量。
+源驱动按路径排序逐文件分块，内容索引跨文件保留。其可变全局状态未照搬；本项目每次加载建立独立 Store，在 SF 预热和测量之前完成，随后只读。`sfInput=unique|all` 明确区分所选 SF 集合；两种模式都只存一份唯一 payload。
 
 ## 适配时必须处理的差异
 

@@ -8,10 +8,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(FINESSE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 find_package(OpenSSL REQUIRED COMPONENTS Crypto)
 include(CTest)
+include(cmake/Xdelta.cmake)
 
 set(FINESSE_SOURCES
     src/Common/Types.cpp
     src/GearHash/GearHash.cpp
+    src/Hash/Hash.cpp
+    src/ChunkStore/ChunkStore.cpp
+    src/EncodedStore/EncodedStore.cpp
+    src/Experiment/DeltaExperiment.cpp
+    src/DeltaCodec/DeltaCodec.cpp
     src/BreakingApart/BreakingApart.cpp
     src/BreakingApart/Chunker.cpp
     src/Finesse/Finesse.cpp
@@ -25,7 +31,7 @@ set(FINESSE_SOURCES
 # 配置时保存源码快照，任何输入变化触发重配置，使二进制中的摘要对应本次构建。
 file(GLOB_RECURSE SNAPSHOT_FILES CONFIGURE_DEPENDS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
     "src/*.h" "src/*.cpp" "tests/*.cpp" "tests/*.py" "scripts/*.py" "cmake/*.in"
-    "configs/*" "docs/*.md")
+    "configs/*" "docs/*.md" "AGENT*.md" "cmake/*.cmake" "third_party/xdelta/*")
 list(APPEND SNAPSHOT_FILES CMakeLists.txt README.md)
 list(SORT SNAPSHOT_FILES)
 set(SOURCE_FILES_CSV "file,sha256\n")
@@ -60,7 +66,7 @@ configure_file(cmake/BuildInfo.h.in generated/BuildInfo.h @ONLY)
 
 add_library(finesse_core STATIC ${FINESSE_SOURCES})
 target_include_directories(finesse_core PUBLIC src PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
-target_link_libraries(finesse_core PUBLIC OpenSSL::Crypto)
+target_link_libraries(finesse_core PUBLIC OpenSSL::Crypto PRIVATE xdelta3::xdelta3)
 target_compile_options(finesse_core PRIVATE -Wall -Wextra -Wpedantic)
 set_target_properties(finesse_core PROPERTIES INTERPROCEDURAL_OPTIMIZATION FALSE)
 if(FINESSE_SANITIZERS)
@@ -76,6 +82,16 @@ if(BUILD_TESTING)
     target_link_libraries(finesse_tests PRIVATE finesse_core)
     target_compile_options(finesse_tests PRIVATE -Wall -Wextra -Wpedantic)
     add_test(NAME core COMMAND finesse_tests)
+    add_executable(chunk_store_tests tests/ChunkStoreTests.cpp)
+    target_link_libraries(chunk_store_tests PRIVATE finesse_core)
+    target_compile_options(chunk_store_tests PRIVATE -Wall -Wextra -Wpedantic)
+    add_test(NAME chunk_store COMMAND chunk_store_tests)
+    add_executable(delta_store_tests tests/DeltaStoreTests.cpp)
+    target_link_libraries(delta_store_tests PRIVATE finesse_core)
+    target_compile_options(delta_store_tests PRIVATE -Wall -Wextra -Wpedantic)
+    add_test(NAME delta_store COMMAND delta_store_tests)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     add_test(NAME experiment COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/ExperimentTests.py" "$<TARGET_FILE:Finesse>")
+    add_test(NAME delta_experiment COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/DeltaExperimentTests.py" "$<TARGET_FILE:Finesse>")
+    add_test(NAME deduplication COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/DeduplicationTests.py" "$<TARGET_FILE:Finesse>")
 endif()
