@@ -29,8 +29,9 @@ static auto rejects(Function function) -> void {
     require(rejected, "expected explicit rejection");
 }
 
-static auto referenceHash(const std::uint8_t *bytes, const std::size_t length,
-                           std::uint64_t hash = 0) -> std::uint64_t {
+static auto referenceHash(const std::uint8_t *bytes,
+                          const std::size_t length,
+                          std::uint64_t hash = 0) -> std::uint64_t {
     for (std::size_t i = 0; i < length; ++i) {
         hash = hash * std::uint64_t {2} + GEAR_TABLE[bytes[i]];
     }

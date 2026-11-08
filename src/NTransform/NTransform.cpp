@@ -20,13 +20,16 @@ auto validateTransformParameters(const TransformParameters &parameters) -> bool 
     return parameters.multipliers == approved.multipliers && parameters.addends == approved.addends;
 }
 
-auto transformFingerprint(const std::uint64_t fingerprint, const std::uint32_t multiplier,
+//线性变换指纹（gearHash）
+auto transformFingerprint(const std::uint64_t fingerprint,
+                          const std::uint32_t multiplier,
                           const std::uint32_t addend) -> std::uint32_t {
     // 最大乘加结果仍在 uint64_t 范围内，最后明确截取低 32 位。
     const auto low = static_cast<std::uint32_t>(fingerprint);
     return static_cast<std::uint32_t>(static_cast<std::uint64_t>(multiplier) * low + addend);
 }
 
+//将一维的features处理成二维的groups，不涉及线性变换
 auto groupNTransformFeatures(const FeatureValues &features) -> FeatureGroups {
     FeatureGroups groups {};
     for (std::size_t s = 0; s < SUPER_FEATURE_COUNT; ++s) {
@@ -36,7 +39,8 @@ auto groupNTransformFeatures(const FeatureValues &features) -> FeatureGroups {
     return groups;
 }
 
-auto extractNTransform(const ChunkView chunk, const HashConfig &config,
+auto extractNTransform(const ChunkView chunk,
+                       const HashConfig &config,
                        const TransformParameters &parameters) -> SignatureResult {
     SignatureResult result;
     result.status = validateChunk(chunk, config);

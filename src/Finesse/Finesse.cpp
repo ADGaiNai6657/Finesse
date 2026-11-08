@@ -14,7 +14,7 @@ auto groupFinesseFeatures(const FeatureValues &features) -> FeatureGroups {
         for (std::size_t i = 1; i < ranked.size(); ++i) {
             const auto value = ranked[i];
             std::size_t j = i;
-            while (j > 0 && value > ranked[j - 1]) {
+            while (j > 0 && value > ranked[j - 1]) {    //排序
                 ranked[j] = ranked[j - 1];
                 --j;
             }
@@ -38,7 +38,7 @@ auto extractFinesse(const ChunkView chunk, const HashConfig &config) -> Signatur
     for (std::size_t i = 0; i < FEATURE_COUNT; ++i) {
         const auto end = subchunkBoundary(chunk.length, i + 1);
         auto maximum = FingerprintValue {0};
-        for (; position < end; ++position) {
+        for ( ; position < end; ++position) {
             hash = gearRoll(hash, chunk.data[position]);
             maximum = std::max(maximum, hash);
         }
