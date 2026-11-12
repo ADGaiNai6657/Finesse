@@ -11,23 +11,34 @@ Finesse/
 ├── docs/
 ├── src/
 │   ├── main.cpp
-│   ├── Common/Types.h
-│   ├── GearHash/GearHash.h, GearHash.cpp
-│   ├── Hash/Hash.h, Hash.cpp
-│   ├── ChunkStore/ChunkStore.h, ChunkStore.cpp
-│   ├── DeltaCodec/DeltaCodec.h, DeltaCodec.cpp
-│   ├── EncodedStore/EncodedStore.h, EncodedStore.cpp
-│   ├── BreakingApart/BreakingApart.h, BreakingApart.cpp
-│   ├── Finesse/Finesse.h, Finesse.cpp
-│   ├── NTransform/NTransform.h, NTransform.cpp
-│   ├── SuperFeature/SuperFeature.h, SuperFeature.cpp
-│   ├── Experiment/Experiment.h, Experiment.cpp, Input.cpp
-│   ├── Experiment/DeltaExperiment.h, DeltaExperiment.cpp
-│   └── Pipeline/Pipeline.h
+│   ├── Common/Types.h, Types.cpp
+│   ├── Algorithms/                   # 签名算法和 SF 组合
+│   │   ├── Finesse/
+│   │   ├── NTransform/
+│   │   └── SuperFeature/
+│   ├── Hashing/                      # 指纹更新和内容摘要
+│   │   ├── GearHash/
+│   │   └── Hash/
+│   ├── Chunking/                     # CDC 和切点适配
+│   │   └── BreakingApart/
+│   ├── Compression/                  # 差分编解码包装
+│   │   └── DeltaCodec/
+│   ├── Storage/                      # 原文唯一池与编码池
+│   │   ├── ChunkStore/
+│   │   └── EncodedStore/
+│   └── Runtime/                      # 实验驱动与候选索引
+│       ├── Experiment/
+│       └── Pipeline/
 ├── tests/
+├── scripts/
 ├── configs/
-└── results/                 # 实验产物，不存入源码模块
+├── third_party/xdelta/
+└── results/                          # 实验产物，不存入源码模块
 ```
+
+2026-11-12 按用户要求只调整项目结构：原有模块名称和文件保持，外层按算法、哈希、分块、压缩、存储和运行组织分类。`main.cpp` 与 Common 仍位于 src 下。本次全部源码（含 include、注释和用户已有的未提交改动）保持逐字节不变，函数职责和模块依赖也不拆分或重写。
+
+CMake 显式源文件列表和 Gear 表摘要路径改用新位置；PUBLIC include 搜索目录包含 src 及上述六个分组目录，继续解析现有 `Finesse/Finesse.h`、`Hash/Hash.h`、`Experiment/Experiment.h` 等引用，不增设兼容头或软链接。src 下递归源码快照继续覆盖新结构。SHA-256 完整性工具仍在 Runtime/Experiment/IO 中，此次不拆文件或重新划分函数。
 
 `Common` 只放两种算法共同使用的数据类型和常量，不成为杂项工具目录。`Pipeline` 实现候选索引；真实编码内容由 `EncodedStore` 拥有，`DeltaCodec` 调用静态 xdelta C 库，磁盘记录类型仍为预留。
 

@@ -3,26 +3,28 @@
 来源：ADGaiNai6657/FastCDC，分支 `feature/chunk-store-dedup`。
 固定提交：`be5816e8e2e8548738db3e7dd54aa323056df402`。
 
-| 原路径/本项目路径 | 原文件 SHA-256 | 适配 |
-| --- | --- | --- |
-| `src/GearHash/GearHash.h` | `b8ecf15d6c81faa4e89b7c56f7f230cc8eb49a59bcd0b3fd9a0756de6133c7f6` | 初次原样摘取；当前本地增加函数阅读注释 |
-| `src/GearHash/GearHash.cpp` | `877b4bbbfa1ee686218f56af7d69888b705afef9d6a8bd2397f583ffd863edac` | 初次原样摘取；当前增加阅读注释，保留用户审查时对 length 的顶层 const |
-| `src/BreakingApart/BreakingApart.h` | `d5b55f9f4ca644167a7770ee3cc3754da5bb4e3debd4da8167e6d5b2aafb9ba6` | 初次原样摘取；当前本地增加函数阅读注释 |
-| `src/BreakingApart/BreakingApart.cpp` | `67b1ae15256d3cc106115bb015605cf70d96a2e643efdad3d8999c2537acbeec` | 初次原样摘取；当前本地增加函数阅读注释 |
+| 上游原路径 | 当前本地路径 | 原文件 SHA-256 | 适配 |
+| --- | --- | --- | --- |
+| `src/GearHash/GearHash.h` | `src/Hashing/GearHash/GearHash.h` | `b8ecf15d6c81faa4e89b7c56f7f230cc8eb49a59bcd0b3fd9a0756de6133c7f6` | 初次原样摘取；当前本地增加函数阅读注释 |
+| `src/GearHash/GearHash.cpp` | `src/Hashing/GearHash/GearHash.cpp` | `877b4bbbfa1ee686218f56af7d69888b705afef9d6a8bd2397f583ffd863edac` | 初次原样摘取；当前增加阅读注释，保留用户审查时对 length 的顶层 const |
+| `src/BreakingApart/BreakingApart.h` | `src/Chunking/BreakingApart/BreakingApart.h` | `d5b55f9f4ca644167a7770ee3cc3754da5bb4e3debd4da8167e6d5b2aafb9ba6` | 初次原样摘取；当前本地增加函数阅读注释 |
+| `src/BreakingApart/BreakingApart.cpp` | `src/Chunking/BreakingApart/BreakingApart.cpp` | `67b1ae15256d3cc106115bb015605cf70d96a2e643efdad3d8999c2537acbeec` | 初次原样摘取；当前本地增加函数阅读注释 |
 
-表中摘要始终指原始上游文件，不改写为当前本地副本摘要。2026-11-08 用户要求各函数补充用途/输入/输出注释，且明确排除 third_party/xdelta；src 内上述本地副本据此增加注释，不能再称当前文件与上游逐字节相同。本轮相对用户已提交基线只插入注释，原有表值、函数签名和可执行语句保持不变；实际当前文件摘要仍由后续构建的 source-files.csv 记录。
+表中摘要始终指原始上游文件，不改写为当前本地副本摘要。2026-11-08 用户要求各函数补充用途/输入/输出注释，且明确排除 third_party/xdelta；src 内上述本地副本据此增加注释，不能再称当前文件与上游逐字节相同。2026-11-08 的注释轮次相对当时已提交基线只插入注释，原有表值、函数签名和可执行语句保持不变；实际当前文件摘要仍由后续构建的 source-files.csv 记录。
+
+2026-11-12 只按职责移动本地目录，表格分别列出“上游原路径”和“当前本地路径”，原始摘要仍与上游文件对应。GearHash/Hash 属于 Hashing，BreakingApart 属于 Chunking，ChunkStore 属于 Storage；本次迁移不改文件内容，所有固定来源和适配差异继续有效。
 
 新增 `Chunker.h/.cpp` 在外层严格验证 D-16、拒绝零最小长度、检查偏移溢出与切点全覆盖；没有改变来源判定字节语义。
 D-21 已参考下列来源适配 Hash/ChunkStore，保留 EVP SHA-1、同摘要候选桶及长度/逐字节确认。新的实现使用显式实验独占状态与 storedId，不照搬全局变量；SHA-256 完整性校验继续独立使用。
 
 ## D-21 适配模块来源
 
-| 来源路径/本项目路径 | 固定来源 SHA-256 | 适配差异 |
-| --- | --- | --- |
-| `src/Hash/Hash.h` | `3aa53d4368cb6c644fb6035950aff7405640128b5cfdcde80510ac84ffba368b` | 保留 20 字节摘要接口，新增显式十六进制编码，统一 pragma once |
-| `src/Hash/Hash.cpp` | `7f4d020c45e3515942139cce5b1bff8d17ec86b180bbb8276cdf5b5f679b3700` | EVP_Digest 检查错误，移除线程局部裸指针，容器桶号使用完整摘要混合 |
-| `src/ChunkStore/ChunkStore.h` | `27b030ddbdff8fc75f6a4bbd088f2aba6acc9c505beef2dd08e342198cdeaacd` | 实验独占 Store，无可变全局；用 storedId 及出现记录代替全局指针容器 |
-| `src/ChunkStore/ChunkStore.cpp` | `9167f0e9c34118d5697a9e6b9d0128df5d1a2d515139c5bc12c5a8b8d3e6dfba` | 保留摘要＋长度/字节确认，新增查询不计数、计数溢出检查与插入回滚 |
+| 上游原路径 | 当前本地路径 | 固定来源 SHA-256 | 适配差异 |
+| --- | --- | --- | --- |
+| `src/Hash/Hash.h` | `src/Hashing/Hash/Hash.h` | `3aa53d4368cb6c644fb6035950aff7405640128b5cfdcde80510ac84ffba368b` | 保留 20 字节摘要接口，新增显式十六进制编码，统一 pragma once |
+| `src/Hash/Hash.cpp` | `src/Hashing/Hash/Hash.cpp` | `7f4d020c45e3515942139cce5b1bff8d17ec86b180bbb8276cdf5b5f679b3700` | EVP_Digest 检查错误，移除线程局部裸指针，容器桶号使用完整摘要混合 |
+| `src/ChunkStore/ChunkStore.h` | `src/Storage/ChunkStore/ChunkStore.h` | `27b030ddbdff8fc75f6a4bbd088f2aba6acc9c505beef2dd08e342198cdeaacd` | 实验独占 Store，无可变全局；用 storedId 及出现记录代替全局指针容器 |
+| `src/ChunkStore/ChunkStore.cpp` | `src/Storage/ChunkStore/ChunkStore.cpp` | `9167f0e9c34118d5697a9e6b9d0128df5d1a2d515139c5bc12c5a8b8d3e6dfba` | 保留摘要＋长度/字节确认，新增查询不计数、计数溢出检查与插入回滚 |
 
 以上均为适配实现，不声称与上游文件逐字节相同。实际本项目文件摘要由构建生成的 source-files.csv 保存。上游仓库未修改。
 

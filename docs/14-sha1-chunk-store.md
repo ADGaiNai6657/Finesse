@@ -4,7 +4,7 @@
 
 ## 核心实现
 
-`src/Hash` 使用 OpenSSL EVP 计算完整 SHA-1（20 字节）；`src/ChunkStore` 采用 SHA-1 多值索引查候选，再比较长度与全部字节。相同摘要而内容不同的块分别保留。唯一块拥有独立字节副本，重复出现返回相同 storedId，引用同一 payload，不重复复制内容。
+`src/Hashing/Hash` 使用 OpenSSL EVP 计算完整 SHA-1（20 字节）；`src/Storage/ChunkStore` 采用 SHA-1 多值索引查候选，再比较长度与全部字节。相同摘要而内容不同的块分别保留。唯一块拥有独立字节副本，重复出现返回相同 storedId，引用同一 payload，不重复复制内容。
 
 Store 是实验独占状态，不使用上游可变全局变量。storedId 按首次出现顺序生成，与原 chunkId 分开；原始出现记录保留来源路径、偏移、长度与 storedId。所有长度都参与精确去重，SF 仍按 D-04 排除小于 12 的块。
 

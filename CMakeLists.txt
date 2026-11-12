@@ -12,21 +12,21 @@ include(cmake/Xdelta.cmake)
 
 set(FINESSE_SOURCES
     src/Common/Types.cpp
-    src/GearHash/GearHash.cpp
-    src/Hash/Hash.cpp
-    src/ChunkStore/ChunkStore.cpp
-    src/EncodedStore/EncodedStore.cpp
-    src/Experiment/DeltaExperiment.cpp
-    src/DeltaCodec/DeltaCodec.cpp
-    src/BreakingApart/BreakingApart.cpp
-    src/BreakingApart/Chunker.cpp
-    src/Finesse/Finesse.cpp
-    src/NTransform/NTransform.cpp
-    src/SuperFeature/SuperFeature.cpp
-    src/Pipeline/Pipeline.cpp
-    src/Experiment/IO.cpp
-    src/Experiment/Input.cpp
-    src/Experiment/Experiment.cpp)
+    src/Hashing/GearHash/GearHash.cpp
+    src/Hashing/Hash/Hash.cpp
+    src/Storage/ChunkStore/ChunkStore.cpp
+    src/Storage/EncodedStore/EncodedStore.cpp
+    src/Runtime/Experiment/DeltaExperiment.cpp
+    src/Compression/DeltaCodec/DeltaCodec.cpp
+    src/Chunking/BreakingApart/BreakingApart.cpp
+    src/Chunking/BreakingApart/Chunker.cpp
+    src/Algorithms/Finesse/Finesse.cpp
+    src/Algorithms/NTransform/NTransform.cpp
+    src/Algorithms/SuperFeature/SuperFeature.cpp
+    src/Runtime/Pipeline/Pipeline.cpp
+    src/Runtime/Experiment/IO.cpp
+    src/Runtime/Experiment/Input.cpp
+    src/Runtime/Experiment/Experiment.cpp)
 
 # 配置时保存源码快照，任何输入变化触发重配置，使二进制中的摘要对应本次构建。
 file(GLOB_RECURSE SNAPSHOT_FILES CONFIGURE_DEPENDS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -57,7 +57,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
     endif()
 endif()
 file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/configs/parameters-v1.csv" PARAMETER_FILE_SHA256)
-file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/src/GearHash/GearHash.h" GEAR_TABLE_SHA256)
+file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/src/Hashing/GearHash/GearHash.h" GEAR_TABLE_SHA256)
 set(COMPILER_INFO "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}; ${CMAKE_CXX_COMPILER}")
 set(BUILD_TYPE "${CMAKE_BUILD_TYPE}")
 string(TOUPPER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_UPPER)
@@ -65,7 +65,17 @@ set(BUILD_OPTIONS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}; C+
 configure_file(cmake/BuildInfo.h.in generated/BuildInfo.h @ONLY)
 
 add_library(finesse_core STATIC ${FINESSE_SOURCES})
-target_include_directories(finesse_core PUBLIC src PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
+# 按职责分组目录，保留源码既有的 Module/Header.h 引用，源码内容无需修改。
+target_include_directories(finesse_core
+    PUBLIC
+        src
+        src/Algorithms
+        src/Hashing
+        src/Chunking
+        src/Compression
+        src/Storage
+        src/Runtime
+    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 target_link_libraries(finesse_core PUBLIC OpenSSL::Crypto PRIVATE xdelta3::xdelta3)
 target_compile_options(finesse_core PRIVATE -Wall -Wextra -Wpedantic)
 set_target_properties(finesse_core PROPERTIES INTERPROCEDURAL_OPTIMIZATION FALSE)

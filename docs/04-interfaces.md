@@ -82,7 +82,7 @@ Gear 状态采用来源中的 `std::uint64_t` 值或引用，`gearRoll` 返回�
 
 ## D-21 已接入的精确去重与存储接口
 
-实际声明见 [Hash.h](../src/Hash/Hash.h)、[ChunkStore.h](../src/ChunkStore/ChunkStore.h)、[Experiment.h](../src/Experiment/Experiment.h)。
+实际声明见 [Hash.h](../src/Hashing/Hash/Hash.h)、[ChunkStore.h](../src/Storage/ChunkStore/ChunkStore.h)、[Experiment.h](../src/Runtime/Experiment/Experiment.h)。
 
 | 接口/类型 | 契约 |
 | --- | --- |
@@ -149,3 +149,9 @@ Gear 状态采用来源中的 `std::uint64_t` 值或引用，`gearRoll` 返回�
 | `loadDeltaExperimentConfig(path)` / `runDeltaExperiment(config)` | 新入口，16 键严格解析，引用 inputConfig 要求 unique；单次构造、原文池析构后全恢复 |
 
 具体字段、ID 语义、配置和统计见 [15](15-xdelta-pipeline-proposal.md)；`ChunkRecord` 历史磁盘边界不承载真实 payload。EncodedChunk.kind 只有 Raw/Delta，精确重复属于 occurrence 引用，不能再创建 Duplicate payload。所有指针视图只在调用期间借用；恢复结果拥有字节，不返回对临时解码区的视图。
+
+## 2026-11-12：目录分组后的接口位置
+
+本次仅移动完整模块目录，所有函数声明、签名、实现、include、注释和所有权契约均保持原样。Algorithms 包含 Finesse/NTransform/SuperFeature，Hashing 包含 GearHash/Hash，Chunking 包含 BreakingApart，Compression 包含 DeltaCodec，Storage 包含两种 Store，Runtime 包含 Experiment/Pipeline。Common 与 main.cpp 不动，完整目录见 [03](03-architecture.md)。
+
+CMake 的 PUBLIC include 路径新增各分组根，使原有 Module/Header.h 引用继续有效；没有增加包装头、软链接或复制实现。本页和 Review 导读的本地链接已迁移，历史产物中的旧路径保持原始记录。

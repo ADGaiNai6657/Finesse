@@ -8,6 +8,10 @@
 
 后续代理协作遵循 [AGENT.md](AGENT.md)，标准自动发现入口为 [AGENTS.md](AGENTS.md)：文档/论文冲突必须报告，涉及取舍须询问人类，实现改动同步文档。
 
+## 源码目录
+
+src 按职责分组：Algorithms（Finesse、NTransform、SuperFeature）、Hashing（GearHash、SHA-1）、Chunking（CDC）、Compression（DeltaCodec）、Storage（原文池/编码池）、Runtime（实验驱动/候选索引）。Common 和 main.cpp 保持位置，完整目录见 [架构说明](docs/03-architecture.md)。本次仅移动目录并同步 CMake/文档路径，源码内容及原 include 保持不变。
+
 ## 构建与测试
 
 需要 CMake ≥ 4.2、C99/C++20 编译器、OpenSSL Crypto 开发库和 Python 3.9+（测试与样例生成）。算法与实验驱动不调用 Python。

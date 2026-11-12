@@ -101,3 +101,9 @@ D-14 已冻结为上述方案：不在子块边界重置 Gear，不将 Finesse f
 用户要求模仿其审查代码时的函数前中文注释，为每个函数说明用途、输入和输出，并在修改前先提交原版本。用户已手动提交基线 `620c35f`（Add explanatory comments and tidy formatting in SF implementation），随后明确指示继续修改。
 
 针对与固定上游源码要求可能冲突的范围，用户明确选择“仅本项目代码，保留 xdelta 上游原样（建议）”。据此覆盖 src/tests/scripts 中的命名函数、头文件声明、局部函数及命名 lambda，third_party/xdelta 不改动。具体注释格式见 [05](05-coding-style.md)。本轮只插入函数阅读注释；不修改函数签名、实现语句、算法、配置或实验统计。src 内 FastCDC 副本补充注释后，由 08/10 明确记录来源与当前本地差异，不再声称当前文件逐字节等于上游。
+
+## 2026-11-12：仅调整项目目录结构
+
+用户明确要求按职责分组：“算法一个文件夹，下存算法、hash 一个文件夹，下存 hash 相关内容，以此类推”，并限制“不要动代码，仅修改项目结构”。据此在 src 下新增 Algorithms/Hashing/Chunking/Compression/Storage/Runtime 分组，迁入原模块目录，Common 与 main.cpp 保持位置。
+
+本次全部源码和既有 include 逐字节保持不变，包括用户原有的 ChunkStore.cpp 未提交改动；通过 CMake 的显式源路径、Gear 表摘要路径和分组 include 根适配新结构。测试、脚本、运行配置、第三方源码和历史结果不移动或改写，仅同步当前文档的目录与本地链接，保留上游来源路径和摘要。没有改动 D-14～D-24 的算法、输入、存储或计时规则。

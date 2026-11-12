@@ -26,17 +26,17 @@
 | --- | --- | --- |
 | 1 | [算法规格](02-algorithm-spec.md)、[决策记录](07-decisions.md) | 当前到底批准了哪些算法语义？哪些内容留待后续？ |
 | 2 | [Common/Types.h](../src/Common/Types.h)、[Types.cpp](../src/Common/Types.cpp) | 输入、状态、feature、SF 的类型是什么？哪些配置固定？ |
-| 3 | [Finesse.cpp](../src/Finesse/Finesse.cpp) | 一个 chunk 如何分成 12 个子块，又如何按排名组成 3 个 SF？ |
-| 4 | [NTransform.cpp](../src/NTransform/NTransform.cpp)、[SuperFeature.cpp](../src/SuperFeature/SuperFeature.cpp) | 基线逐字节做了什么额外工作？两算法如何使用同一 SF 编码协议？ |
+| 3 | [Finesse.cpp](../src/Algorithms/Finesse/Finesse.cpp) | 一个 chunk 如何分成 12 个子块，又如何按排名组成 3 个 SF？ |
+| 4 | [NTransform.cpp](../src/Algorithms/NTransform/NTransform.cpp)、[SuperFeature.cpp](../src/Algorithms/SuperFeature/SuperFeature.cpp) | 基线逐字节做了什么额外工作？两算法如何使用同一 SF 编码协议？ |
 | 5 | [CoreTests.cpp](../tests/CoreTests.cpp) | 上述计算有哪些参考答案和边界测试？哪些假设仍需人工核对？ |
-| 5a | [Hash.cpp](../src/Hash/Hash.cpp)、[ChunkStore.cpp](../src/ChunkStore/ChunkStore.cpp)、[ChunkStoreTests.cpp](../tests/ChunkStoreTests.cpp) | 整块 SHA-1 如何查候选？碰撞如何区分？重复是否复用同一地址？ |
-| 5b | [Delta 规格](15-xdelta-pipeline-proposal.md)、[DeltaCodec.cpp](../src/DeltaCodec/DeltaCodec.cpp) | 调用的是哪份上游代码？base/target 方向、级别、校验、错误如何处理？ |
-| 5c | [EncodedStore.cpp](../src/EncodedStore/EncodedStore.cpp)、[DeltaStoreTests.cpp](../tests/DeltaStoreTests.cpp) | A 的原文何时释放？Delta 是否仅保存 payload/baseId？怎样证明能从池恢复？ |
-| 5d | [DeltaExperiment.cpp](../src/Experiment/DeltaExperiment.cpp)、[DeltaExperimentTests.py](../tests/DeltaExperimentTests.py) | 新入口是否单次、独立构造两池、释放原文后恢复全部出现？ |
-| 6 | [main.cpp](../src/main.cpp)、[Experiment.h](../src/Experiment/Experiment.h)、[Input.cpp](../src/Experiment/Input.cpp) | raw/manifest 如何接入唯一池？源缓冲释放后如何由 storedId 读取？unique/all 如何选择？ |
-| 7 | [Chunker.cpp](../src/BreakingApart/Chunker.cpp)、[BreakingApart.cpp](../src/BreakingApart/BreakingApart.cpp) | 分块是否完整、切点是否有进展，上游语义是否保留？ |
-| 8 | [Experiment.cpp](../src/Experiment/Experiment.cpp) | 哪些操作被计时？预热、测量、摘要、统计和诊断如何分开？ |
-| 9 | [Pipeline.cpp](../src/Pipeline/Pipeline.cpp)、[IO.cpp](../src/Experiment/IO.cpp) | 候选选择是否确定？损坏输入和 I/O 错误如何失败？ |
+| 5a | [Hash.cpp](../src/Hashing/Hash/Hash.cpp)、[ChunkStore.cpp](../src/Storage/ChunkStore/ChunkStore.cpp)、[ChunkStoreTests.cpp](../tests/ChunkStoreTests.cpp) | 整块 SHA-1 如何查候选？碰撞如何区分？重复是否复用同一地址？ |
+| 5b | [Delta 规格](15-xdelta-pipeline-proposal.md)、[DeltaCodec.cpp](../src/Compression/DeltaCodec/DeltaCodec.cpp) | 调用的是哪份上游代码？base/target 方向、级别、校验、错误如何处理？ |
+| 5c | [EncodedStore.cpp](../src/Storage/EncodedStore/EncodedStore.cpp)、[DeltaStoreTests.cpp](../tests/DeltaStoreTests.cpp) | A 的原文何时释放？Delta 是否仅保存 payload/baseId？怎样证明能从池恢复？ |
+| 5d | [DeltaExperiment.cpp](../src/Runtime/Experiment/DeltaExperiment.cpp)、[DeltaExperimentTests.py](../tests/DeltaExperimentTests.py) | 新入口是否单次、独立构造两池、释放原文后恢复全部出现？ |
+| 6 | [main.cpp](../src/main.cpp)、[Experiment.h](../src/Runtime/Experiment/Experiment.h)、[Input.cpp](../src/Runtime/Experiment/Input.cpp) | raw/manifest 如何接入唯一池？源缓冲释放后如何由 storedId 读取？unique/all 如何选择？ |
+| 7 | [Chunker.cpp](../src/Chunking/BreakingApart/Chunker.cpp)、[BreakingApart.cpp](../src/Chunking/BreakingApart/BreakingApart.cpp) | 分块是否完整、切点是否有进展，上游语义是否保留？ |
+| 8 | [Experiment.cpp](../src/Runtime/Experiment/Experiment.cpp) | 哪些操作被计时？预热、测量、摘要、统计和诊断如何分开？ |
+| 9 | [Pipeline.cpp](../src/Runtime/Pipeline/Pipeline.cpp)、[IO.cpp](../src/Runtime/Experiment/IO.cpp) | 候选选择是否确定？损坏输入和 I/O 错误如何失败？ |
 | 10 | [ExperimentTests.py](../tests/ExperimentTests.py)、[DeduplicationTests.py](../tests/DeduplicationTests.py)、[CMakeLists.txt](../CMakeLists.txt)、[数据说明](12-fastcdc-dataset.md) | CLI、重放、构建和当前四组数据是否与实验记录一致？ |
 
 只看算法可读 2～5；本次真实 Delta Review 建议先读 5a～5d 和本文第 11 节，再读候选索引。判断 SF 性能还需要 6～10。
@@ -45,31 +45,39 @@
 
 ```text
 src/
-  main.cpp                   命令行入口与退出码
-  Common/                    类型、固定配置、输入检查与子块边界
-  GearHash/                  上游 Gear 表和更新原语
-  Hash/                      完整 SHA-1 摘要、编码与容器桶号
-  ChunkStore/                精确查重、唯一原文 payload、读取、计数与 reset
-  DeltaCodec/                固定 xdelta C 内存 API、VCDIFF 编解码
-  EncodedStore/              实际 Raw/Delta payload、资格与正收益、只依赖编码池恢复
-  BreakingApart/             上游 FastCDC 与本项目校验适配层
-  Finesse/                   子块最大值提取、排名分组
-  NTransform/                固定变换参数、逐字节变换、连续分组
-  SuperFeature/              显式小端编码、统一 SF 哈希
-  Experiment/
-    Experiment.h             运行配置、源文件、chunk 记录的结构
-    Input.cpp                配置、加载、CDC/清单重放、入池和 SF 集合选择
-    IO.h / IO.cpp            二进制 I/O、CSV、SHA-256、溢出检查、路径解析
-    Experiment.cpp           SF 测量、诊断、统计、共用输入元信息导出
-    DeltaExperiment.cpp      独立 Delta 配置、构造/释放/恢复、质量产物
-  Pipeline/                  查询/插入分离的 FirstFit 索引，旧诊断 wrapper
-third_party/xdelta/          原样上游源码/许可证、来源与完整性清单
-tests/                       C++ 核心测试与 Python CLI 集成测试
-scripts/                     输入列表准备与小型验收数据生成
-configs/                     配置、固定参数、显式文件列表
-cmake/BuildInfo.h.in          构建时元信息模板
-results/                     运行产物，不参与算法实现
+  main.cpp                       命令行入口与退出码
+  Common/                        共同类型、固定配置、输入与子块边界
+  Algorithms/
+    Finesse/                     子块最大值提取、排名分组
+    NTransform/                  固定参数、逐字节变换、连续分组
+    SuperFeature/                显式小端编码、统一 SF 哈希
+  Hashing/
+    GearHash/                    Gear 表和更新原语
+    Hash/                        完整 SHA-1 摘要、编码与容器桶号
+  Chunking/
+    BreakingApart/               FastCDC 与本项目切点校验适配层
+  Compression/
+    DeltaCodec/                  固定 xdelta C 内存 API、VCDIFF 编解码
+  Storage/
+    ChunkStore/                  精确查重、唯一原文、引用、计数和 reset
+    EncodedStore/                Raw/Delta 表示、基块资格与编码池恢复
+  Runtime/
+    Experiment/
+      Experiment.h               配置、源文件和出现记录
+      Input.cpp                  配置解析、加载、分块/重放、去重与 SF 集合
+      IO.h / IO.cpp              二进制 I/O、CSV、SHA-256、路径和溢出检查
+      Experiment.cpp             SF 测量、诊断、统计与共用元信息导出
+      DeltaExperiment.h/.cpp     独立 Delta 配置、构造/释放/恢复及质量记录
+    Pipeline/                    FirstFit 查询/插入、旧诊断 wrapper
+third_party/xdelta/              原样上游源码、许可证和完整性清单
+tests/                           C++ 核心测试与 Python CLI 集成测试
+scripts/                         输入准备与验收数据生成
+configs/                         配置、固定参数和显式文件列表
+cmake/BuildInfo.h.in              构建时元信息模板
+results/                         运行产物
 ```
+
+本目录分组于 2026-11-12 按你的要求调整；阅读顺序及上表链接已同步。只有目录、CMake 路径和文档变化，源码文件内容（包括原 include）未修改，已有审查改动也完整保留。头文件搜索入口由 CMake 按分组提供；文件移动不代表函数依赖发生改变。
 
 可以将依赖理解为：核心算法依赖 `Common`、`GearHash` 和 `SuperFeature`；`Experiment` 组织算法、输入与诊断；`main` 只负责调用。Python 用于测量前准备和测试，正式 C++ 提取路径不调用 Python。
 
@@ -112,7 +120,7 @@ flowchart TD
 
 ### 5.1 类型、所有权与失败状态
 
-入口：[Types.h](../src/Common/Types.h)、[Types.cpp](../src/Common/Types.cpp)、[Experiment.h](../src/Experiment/Experiment.h)。
+入口：[Types.h](../src/Common/Types.h)、[Types.cpp](../src/Common/Types.cpp)、[Experiment.h](../src/Runtime/Experiment/Experiment.h)。
 
 - `SourceFile` 仅保存原文件路径、长度与 SHA-256；完整源缓冲只在加载阶段暂存。
 - `StoredChunk.bytes` 拥有唯一 payload，`InputChunk` 保存每次出现的来源、范围、storedId 和 isDuplicate；原始 chunkId 与池内 storedId 分离。
@@ -134,7 +142,7 @@ flowchart TD
 
 ### 5.3 Finesse：覆盖、极值与排名
 
-入口：[Finesse.cpp](../src/Finesse/Finesse.cpp) 的 `extractFinesse`、`groupFinesseFeatures`，以及 `subchunkBoundary`。
+入口：[Finesse.cpp](../src/Algorithms/Finesse/Finesse.cpp) 的 `extractFinesse`、`groupFinesseFeatures`，以及 `subchunkBoundary`。
 
 先看特征提取：每个子块归约一个最大值，子块之间延续 Gear 状态。边界为 `floor(i*L/12)`，生产实现用商和余数避免 `i*L` 溢出。
 
@@ -154,7 +162,7 @@ SF2 输入 = [0, 3, 6, 9]
 
 ### 5.4 NTransform：每个位置都变换
 
-入口：[NTransform.cpp](../src/NTransform/NTransform.cpp)。
+入口：[NTransform.cpp](../src/Algorithms/NTransform/NTransform.cpp)。
 
 重点追踪 `extractNTransform → transformFingerprint → groupNTransformFeatures`：每滚入一个字节，就对该位置的 Gear 低 32 位执行全部 12 对乘加变换；每个维度分别保留最大值。最后按原索引连续四个一组，不使用 Finesse 的排名规则。
 
@@ -168,13 +176,13 @@ SF2 输入 = [0, 3, 6, 9]
 
 ### 5.5 SF：明确编码，再做哈希
 
-入口：[SuperFeature.cpp](../src/SuperFeature/SuperFeature.cpp)。每个值固定编码为 8 字节小端，四个值共 32 字节，Gear 从零状态取最后值。编码不依赖主机端序，也不直接哈希数组的内存布局。
+入口：[SuperFeature.cpp](../src/Algorithms/SuperFeature/SuperFeature.cpp)。每个值固定编码为 8 字节小端，四个值共 32 字节，Gear 从零状态取最后值。编码不依赖主机端序，也不直接哈希数组的内存布局。
 
 SF 输入不包含槽号，以支持批准的跨槽匹配。两算法的分组方式各自决定，但编码和 SF 哈希协议共用。对应测试在 `testGrouping` 的字节向量检查、`referenceSF` 和 `testExtraction`。
 
 ## 6. 第二轮：审输入是否一致
 
-入口：[prepare_fastcdc_inputs.py](../scripts/prepare_fastcdc_inputs.py)、[dataset_inputs.py](../scripts/dataset_inputs.py)、[Input.cpp](../src/Experiment/Input.cpp)、[Chunker.cpp](../src/BreakingApart/Chunker.cpp)。
+入口：[prepare_fastcdc_inputs.py](../scripts/prepare_fastcdc_inputs.py)、[dataset_inputs.py](../scripts/dataset_inputs.py)、[Input.cpp](../src/Runtime/Experiment/Input.cpp)、[Chunker.cpp](../src/Chunking/BreakingApart/Chunker.cpp)。
 
 当前四组取自同级 `../FastCDC/Dataset`：压缩包 5 个文件、源码 16982 个文件、tar 5 个文件、合成备份 8 个文件。第四组为 `synthetic`。详细版本和来源见 [当前数据说明](12-fastcdc-dataset.md)。
 
@@ -202,7 +210,7 @@ SF 输入不包含槽号，以支持批准的跨槽匹配。两算法的分组�
 
 ## 7. 第三轮：审计时与统计
 
-入口：[Experiment.cpp](../src/Experiment/Experiment.cpp) 的 `runExperiment`，对照 [实验协议](06-experiments.md)。
+入口：[Experiment.cpp](../src/Runtime/Experiment/Experiment.cpp) 的 `runExperiment`，对照 [实验协议](06-experiments.md)。
 
 ### 7.1 先画出计时边界
 
@@ -252,7 +260,7 @@ SF 输入不包含槽号，以支持批准的跨槽匹配。两算法的分组�
 
 诊断采用与 SF 相同的所选集合：unique 不将精确重复再次插入相似索引，all 保留每次出现。精确重复由 ChunkStore 的 SHA-1＋字节确认分类，SF 索引只产生相似候选。
 
-入口：[Pipeline.cpp](../src/Pipeline/Pipeline.cpp) 的 `queryThenInsert`，以及 `runDiagnostics`。
+入口：[Pipeline.cpp](../src/Runtime/Pipeline/Pipeline.cpp) 的 `queryThenInsert`，以及 `runDiagnostics`。
 
 索引以 SF 值为键，跨槽查询。当前 chunk 按槽 0、1、2 查询，找到第一个命中后停止；同键保存最早插入的历史 chunk，同一历史块重复槽保留最小槽号。先查后插，不能与自己或未来数据匹配。
 
@@ -262,7 +270,7 @@ SHA-1 与存储耗时另记 dedupElapsedNs，不混入 SF。`deduplication.csv` 
 
 ### 8.2 失败是否可见
 
-入口：[main.cpp](../src/main.cpp)、[IO.cpp](../src/Experiment/IO.cpp)、`runExperiment` 的异常分支。
+入口：[main.cpp](../src/main.cpp)、[IO.cpp](../src/Runtime/Experiment/IO.cpp)、`runExperiment` 的异常分支。
 
 重点核对：配置是否拒绝未知、重复、缺失键；二进制读取不足是否失败；CSV 是否正确处理引号、逗号、换行和 UTF-8；`offset+length`、累计字节和乘法是否经过溢出检查。
 
@@ -343,7 +351,7 @@ ctest --test-dir build/release --output-on-failure
 
 ## 11. 本次新增：沿真实 `A = decode(B, Delta)` 审一遍
 
-先从 [DeltaExperiment.cpp](../src/Experiment/DeltaExperiment.cpp) 的 `runDeltaExperiment` 看两个作用域：内层加载唯一原文并构造两份 EncodedStore，内层结束原文池析构；外层才逐 occurrence 调用 restore。出现映射只是元信息，不含原文视图。随后读 `EncodedStore.cpp` 的三个函数：
+先从 [DeltaExperiment.cpp](../src/Runtime/Experiment/DeltaExperiment.cpp) 的 `runDeltaExperiment` 看两个作用域：内层加载唯一原文并构造两份 EncodedStore，内层结束原文池析构；外层才逐 occurrence 调用 restore。出现映射只是元信息，不含原文视图。随后读 `EncodedStore.cpp` 的三个函数：
 
 1. `buildEncodedStore`：只遍历 input.store.chunks（首次唯一顺序），不遍历重复出现；signature 查询不插入，最终 Raw 才插入。
 2. `appendEncodedChunk`：候选来自此前合格 Raw，真实 xdelta 编码后立即 decode 并完整比较 target。只有严格更小才保留 Delta，否则 Raw；编码失败抛异常。EncodedChunk 只有一个 payload，没有原 A 字段。
@@ -372,7 +380,7 @@ ctest --test-dir build/release --output-on-failure
 
 重点对照 [15](15-xdelta-pipeline-proposal.md) 中 D-23 与旧 `runDiagnostics`：旧诊断的 queryThenInsert 将所有合格所选块插入，本次实际压缩只插入最终 Raw。两者的候选/命中数不能直接当作同一指标。DeltaAttempt 中 candidate.chunkId 在这里是 encoded/stored ID；diagnostics 的 candidateId 则是出现 chunkId。最早由顺序定义，不能改成最小 ID。
 
-进入 [DeltaCodec.cpp](../src/DeltaCodec/DeltaCodec.cpp) 后，确认方向是 `encode(base=B,target=A)`，使用 [固定上游](10-source-provenance.md) 的 `xd3_encode_memory/xd3_decode_memory`，没有自己实现差分。flags 仅 level6/Adler32，不设置二级压缩类型；输出容量不足才扩容重试，其他错误中止。原样上游代码量较大，第一遍可只读两个内存 API 和编解码控制流，先核对 cmake/Xdelta.cmake 的固定摘要/静态库/无网络配置，再展开内部算法。
+进入 [DeltaCodec.cpp](../src/Compression/DeltaCodec/DeltaCodec.cpp) 后，确认方向是 `encode(base=B,target=A)`，使用 [固定上游](10-source-provenance.md) 的 `xd3_encode_memory/xd3_decode_memory`，没有自己实现差分。flags 仅 level6/Adler32，不设置二级压缩类型；输出容量不足才扩容重试，其他错误中止。原样上游代码量较大，第一遍可只读两个内存 API 和编解码控制流，先核对 cmake/Xdelta.cmake 的固定摘要/静态库/无网络配置，再展开内部算法。
 
 建议在 DeltaStoreTests 的 `testStore` 下断点：看 target 从原文变成短 VCDIFF payload，清空源字符串后再调用 restore；`testPipeline` 在整个 ExperimentInput 作用域结束后恢复。对应 fixture 的两个 Delta 都引用同一个 Raw ID=0，证明先接受的 Delta 不会成为下一个基块。无收益测试在真实编码存储追加接口传入不相关候选，验证实际 Raw 回退；跨槽/最早顺序另由索引测试覆盖。
 

@@ -18,7 +18,7 @@
 | 项目 | FastCDC 已观察到的写法 | Finesse 采用方式 |
 | --- | --- | --- |
 | 语言 | C++20 | 保持 C++20 |
-| 模块布局 | `src/GearHash/GearHash.h` 和 `.cpp` | `src/Finesse/Finesse.h` 和 `.cpp` 等同名组织 |
+| 模块布局 | `src/GearHash/GearHash.h` 和 `.cpp` | `src/Algorithms/Finesse/Finesse.h` 和 `.cpp` 等同名组织，外层按职责分类 |
 | 函数 | `gearRoll`、`updateGearHash` | lowerCamelCase，如 `extractFinesse` |
 | 自定义类型 | `Object` | PascalCase，如 `ChunkView` |
 | 常量 | `GEAR_TABLE`、`static constexpr` | 大写下划线、编译期常量 |
@@ -27,7 +27,7 @@
 | 输入 | `const std::uint8_t *data, size_t length` | 保留只读指针加显式长度的思路 |
 | 代码组织 | 普通函数和简单结构体 | 不无故增加复杂继承体系 |
 | 注释 | 中文解释参数和执行过程 | 中文说明契约、边界、论文出处 |
-| 构建 | CMake 显式列出源码，`src` 为 include 根目录 | 使用 target 级 include 路径与显式源文件清单 |
+| 构建 | CMake 显式列出源码，`src` 为 include 根目录 | 使用 target 级分组 include 路径与显式源文件清单，保留原 include 内容 |
 
 ## 补充规范
 
@@ -67,6 +67,10 @@ auto groupNTransformFeatures(const FeatureValues &features) -> FeatureGroups;
 输入应使用真实参数名，说明闭包依赖、视图有效期和必要前提；输出不仅写返回类型，还说明返回值含义、引用回写、文件写入、异常或错误状态。无参数/无返回值也需注明，不能把借用视图写成拥有的副本，不能把“返回状态”写成“抛异常”。
 
 本次用户明确选择“仅本项目代码，保留 xdelta 上游原样”，因此不修改 third_party/xdelta 的上游函数、许可证和摘要清单。src 内的 FastCDC 副本可按用户要求增加本地阅读注释，来源记录相应区分初次原样摘取和注释适配，不改变其算法、表值与切点行为。
+
+## 按职责分组的目录（2026-11-12）
+
+按用户要求，src 下设 Algorithms、Hashing、Chunking、Compression、Storage、Runtime，原模块目录放入对应组，Common 和 main.cpp 保持位置。具体目录见 [03](03-architecture.md)。源码内容及既有 Module/Header.h 引用不变，CMake 通过各分组搜索入口解析；本次不是模块拆分、接口改名或算法改写。
 
 ## 构建与检查
 

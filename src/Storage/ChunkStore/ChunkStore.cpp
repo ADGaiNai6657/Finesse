@@ -4,6 +4,7 @@
 #include <stdexcept>
 
 //检查 chunk 地址并转成字节串视图
+//用于观察chunk中所存储的数据 (使用string_view观察,转化为十六进制数串)
 //输入：chunk：字节地址和长度，非零长度必须有有效地址。
 //输出：返回借用原缓冲的 string_view；空输入返回空视图，非法地址抛异常。
 static auto contentView(const ChunkView chunk) -> std::string_view {
@@ -11,7 +12,9 @@ static auto contentView(const ChunkView chunk) -> std::string_view {
         throw std::invalid_argument("null chunk data with nonzero length");
     }
     return chunk.length == 0 ? std::string_view {} : std::string_view {
-        reinterpret_cast<const char *>(chunk.data), chunk.length};
+        reinterpret_cast<const char *>(chunk.data),
+        chunk.length
+    };
 }
 
 //为唯一块池安全累加计数或字节数

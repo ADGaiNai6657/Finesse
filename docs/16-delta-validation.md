@@ -68,3 +68,9 @@ python3 scripts/verify_delta_results.py results/fastcdc-dataset-1-delta-release-
 ## 2026-11-08：函数阅读注释回归
 
 以用户提交的 620c35f 为基线，为本项目函数/声明及命名 lambda 补充用途、输入和输出注释。源码差异核对确认 C++ 仅插入注释行，Python AST 与非注释 token 不变；third_party/xdelta 未修改。Debug（ASan/UBSan）与 Release 各自 6/6 CTest 通过。本次未重跑四组数据，不替换上文历史质量结果；注释和文档参与构建摘要，sourceDigest 与历史运行不同属于正常现象。
+
+## 2026-11-12：按职责分组目录的回归
+
+本次仅移动完整模块目录并同步 CMake 路径和文档，未修改源码或测试内容。迁移前后逐文件 SHA-256 核对：src 全部 32 个文件逐字节相同，包括用户已有的 ChunkStore.cpp 未提交审查改动；tests、scripts、configs、third_party 内容也保持不变。
+
+在新目录下执行 `cmake --build build/debug -j 4`、`ctest --test-dir build/debug --output-on-failure`，ASan/UBSan 配置 6/6 通过；Release 对应构建与 CTest 也 6/6 通过。源码快照中的文件路径、代码 revision 及文档改变会使 sourceDigest 更新，历史结果和其旧路径快照保留原样。本次未重跑四组质量数据，不产生新的性能或压缩结论。

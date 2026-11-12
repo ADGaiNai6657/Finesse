@@ -67,10 +67,10 @@ DCR 按“全部唯一块原始字节 / 最终 Raw＋Delta payload”计算，�
 
 ## 实际实现与阅读入口
 
-- [DeltaCodec](../src/DeltaCodec/DeltaCodec.cpp)：调用原上游内存 API，参数为 `XD3_COMPLEVEL_6 | XD3_ADLER32`。不设置 `XD3_SEC_TYPE` 即无二级压缩；`SEC_NOALL` 不能脱离 compressor 类型独立使用。C 库采用上游已有 memcpy 读取分支，避免对齐未定义行为；未修改上游算法文件。
-- [EncodedStore](../src/EncodedStore/EncodedStore.cpp)：`appendEncodedChunk` 做真实编码/逐字节回放/表示选择；`buildEncodedStore` 按首次出现顺序调用两阶段索引；`restoreEncodedChunk` 仅接收编码池和 ID，检查基块资格、长度和 SHA-256。
-- [Pipeline](../src/Pipeline/Pipeline.cpp)：`queryCandidate` 只查询；`insertSignature` 仅在最终 Raw 且长度≥12 时调用。旧 `queryThenInsert` 保持 SF 诊断行为。
-- [DeltaExperiment](../src/Experiment/DeltaExperiment.cpp)：严格解析 16 个必填键、单次构造两池、原文析构后遍历全部出现并恢复，成功才生成压缩汇总。
+- [DeltaCodec](../src/Compression/DeltaCodec/DeltaCodec.cpp)：调用原上游内存 API，参数为 `XD3_COMPLEVEL_6 | XD3_ADLER32`。不设置 `XD3_SEC_TYPE` 即无二级压缩；`SEC_NOALL` 不能脱离 compressor 类型独立使用。C 库采用上游已有 memcpy 读取分支，避免对齐未定义行为；未修改上游算法文件。
+- [EncodedStore](../src/Storage/EncodedStore/EncodedStore.cpp)：`appendEncodedChunk` 做真实编码/逐字节回放/表示选择；`buildEncodedStore` 按首次出现顺序调用两阶段索引；`restoreEncodedChunk` 仅接收编码池和 ID，检查基块资格、长度和 SHA-256。
+- [Pipeline](../src/Runtime/Pipeline/Pipeline.cpp)：`queryCandidate` 只查询；`insertSignature` 仅在最终 Raw 且长度≥12 时调用。旧 `queryThenInsert` 保持 SF 诊断行为。
+- [DeltaExperiment](../src/Runtime/Experiment/DeltaExperiment.cpp)：严格解析 16 个必填键、单次构造两池、原文析构后遍历全部出现并恢复，成功才生成压缩汇总。
 - [单元测试](../tests/DeltaStoreTests.cpp)、[CLI 测试](../tests/DeltaExperimentTests.py)、[独立核验脚本](../scripts/verify_delta_results.py)。独立脚本对照源范围摘要和 CSV 证据，不从 CSV 加载 Raw/Delta payload。
 
 `EncodedChunk` 仅含 id、firstChunkId、kind、可选 baseId、originalLength、restoredSha256、payload；没有备用原文或原文指针。encoded id 与构建输入 storedId 一一对应，和任意外部 chunkId 分开。`DeltaAttempt.candidate.chunkId` 在此入口表示 encoded id；旧诊断则使用出现 chunkId，不可混用两类产物。

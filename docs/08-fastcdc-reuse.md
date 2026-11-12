@@ -44,3 +44,7 @@ CDC 每个 chunk 开始 hash=0，从 `last+MinSize` 才开始滚动；命中时�
 - 读取或遍历失败应使实验失败，不能像来源驱动部分路径那样继续处理后仅汇总成功文件。此适配遵从已批准的实验错误契约。
 
 摘取时保留来源提交、原路径、文件摘要和适配差异清单。新模块按本项目风格，直接摘取接口保留原名称以利追踪。实际摘取记录见 10；没有修改上游仓库。
+
+## 2026-11-12：本地目录迁移
+
+上表“来源”列及远端 URL 始终保留上游原路径。当前本地 GearHash/Hash 已置于 src/Hashing，BreakingApart 置于 src/Chunking，ChunkStore 置于 src/Storage；完整原路径到本地路径对照见 [10](10-source-provenance.md)。文件内容、原始上游摘要和算法行为未因迁移改变，上游仓库与 third_party/xdelta 未修改。
