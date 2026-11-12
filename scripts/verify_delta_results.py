@@ -12,20 +12,32 @@ from pathlib import Path
 import sys
 
 
+#读取带表头的 CSV 产物
+#输入：path：CSV 文件路径。
+#输出：返回按行排列的字典列表，字段保留为字符串；读取或解析失败时抛异常。
 def rows(path):
     with path.open(newline="", encoding="utf-8") as stream:
         return list(csv.DictReader(stream))
 
 
+#检查集成测试或审计条件
+#输入：condition：必须成立的条件；message：失败时的说明。
+#输出：返回 None；条件为假时抛 AssertionError。
 def check(condition, message):
     if not condition:
         raise AssertionError(message)
 
 
+#读取运行记录中的 key=value 元信息
+#输入：path：run.txt 等文本文件路径。
+#输出：返回键值字典，忽略不含等号的行；值中的等号保留，重复键以最后一次为准。
 def metadata(path):
     return dict(line.split("=", 1) for line in path.read_text().splitlines() if "=" in line)
 
 
+#独立核对 Delta 产物、源范围摘要、引用资格和加权指标
+#输入：directory：已完成的 Delta 结果目录。
+#输出：返回两算法 compression-summary 字典列表；任何状态、摘要、引用或计数不符均失败，不从 CSV 重载 payload。
 def verify_delta_results(directory):
     directory = Path(directory).resolve()
     meta = metadata(directory / "run.txt")

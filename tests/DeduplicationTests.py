@@ -9,20 +9,32 @@ import sys
 import tempfile
 
 
+#检查集成测试或审计条件
+#输入：condition：必须成立的条件；message：失败时的说明。
+#输出：返回 None；条件为假时抛 AssertionError。
 def check(condition, message):
     if not condition:
         raise AssertionError(message)
 
 
+#读取带表头的 CSV 产物
+#输入：path：CSV 文件路径。
+#输出：返回按行排列的字典列表，字段保留为字符串；读取或解析失败时抛异常。
 def rows(path):
     with path.open(newline="", encoding="utf-8") as stream:
         return list(csv.DictReader(stream))
 
 
+#读取运行记录中的 key=value 元信息
+#输入：path：run.txt 等文本文件路径。
+#输出：返回键值字典，忽略不含等号的行；值中的等号保留，重复键以最后一次为准。
 def metadata(path):
     return dict(line.split("=", 1) for line in path.read_text().splitlines() if "=" in line)
 
 
+#按实际源字节独立核对唯一池、引用和 SF 输入统计
+#输入：output：已完成的 SF 结果目录。
+#输出：返回 deduplication 首行统计字典；唯一性、SHA-1、引用、计数或 SF 集合不符时断言失败。
 def verify_store(output):
     manifest = rows(output / "manifest.csv")
     references = rows(output / "chunk-references.csv")
@@ -93,6 +105,9 @@ def verify_store(output):
     return stats
 
 
+#运行跨文件精确去重、unique/all 和重放集成测试
+#输入：无显式参数；sys.argv[1] 提供待测可执行文件路径。
+#输出：返回 None；构造临时源文件和配置并独立检查产物，通过打印说明，否则抛异常。
 def main():
     binary = Path(sys.argv[1]).resolve()
     with tempfile.TemporaryDirectory(prefix="finesse-dedup-") as directory:
@@ -109,6 +124,9 @@ def main():
             expectedSize="8192", minSize="2048", maxSize="65536", ncLevel="0", warmupRuns="1",
             measurementRuns="5", iterations="3", diagnostics="true", sfInput="unique")
 
+        #生成并执行一个指定 SF 集合的去重用例
+        #输入：name：新配置及结果目录名；updates：覆盖 base 的键值；闭包提供 root/base/binary。
+        #输出：返回结果目录 Path；写配置并执行 --config，非零退出码使测试失败。
         def run(name, **updates):
             config = base | dict(outputDirectory=name) | updates
             path = root / (name + ".conf")

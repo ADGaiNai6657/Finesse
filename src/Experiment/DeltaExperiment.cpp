@@ -13,11 +13,17 @@
 #include <stdexcept>
 #include <sys/utsname.h>
 
+//去掉配置行首尾的空格、制表符和回车
+//输入：value：待处理的字符串。
+//输出：返回裁剪后的副本，全部为空白时返回空串，不修改原串。
 static auto trim(const std::string &value) -> std::string {
     const auto begin = value.find_first_not_of(" \t\r");
     return begin == std::string::npos ? "" : value.substr(begin, value.find_last_not_of(" \t\r") - begin + 1);
 }
 
+//读取并严格检查独立 Delta 管线配置
+//输入：path：16 键配置的路径，相对 inputConfig 以本文件目录为基准。
+//输出：返回配置及引用的输入配置；拒绝未知、重复、缺失、未批准的值或 sfInput!=unique。
 auto loadDeltaExperimentConfig(const std::filesystem::path &path) -> DeltaExperimentConfig {
     const std::map<std::string, std::string> frozen {
         {"pipelineProfile", "delta-memory-v1"}, {"algorithms", "Finesse-Gear,NTransform-Gear"},
@@ -68,6 +74,9 @@ auto loadDeltaExperimentConfig(const std::filesystem::path &path) -> DeltaExperi
     return config;
 }
 
+//将字节计数的总体比例格式化成文本
+//输入：numerator/denominator：分子和分母的 uint64 计数。
+//输出：返回 17 位有效数字的比值文本；分母为 0 时返回空串，表示缺失值。
 static auto ratio(const std::uint64_t numerator, const std::uint64_t denominator) -> std::string {
     if (denominator == 0) {
         return "";
@@ -77,6 +86,9 @@ static auto ratio(const std::uint64_t numerator, const std::uint64_t denominator
     return out.str();
 }
 
+//取得 Delta 运行的当前 UTC 时间
+//输入：无，读取系统时钟。
+//输出：返回 YYYY-MM-DDTHH:MM:SSZ 格式的时间戳文本。
 static auto timestamp() -> std::string {
     const auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::tm utc {};
@@ -86,6 +98,9 @@ static auto timestamp() -> std::string {
     return out.str();
 }
 
+//构造两算法编码池并在释放原文后验证全部出现
+//输入：config：已批准的单次 Delta 配置及输入配置。
+//输出：无返回值；导出真实编码、候选尝试、恢复证据和质量统计，不执行 SF 五轮；失败记 failed 并抛异常，拒绝覆盖。
 auto runDeltaExperiment(const DeltaExperimentConfig &config) -> void {
     const auto &directory = config.outputDirectory;
     std::filesystem::create_directories(directory.parent_path());
@@ -197,6 +212,9 @@ auto runDeltaExperiment(const DeltaExperimentConfig &config) -> void {
             }
             // 尝试可能为负收益，saving 不能在无符号整数上相减。
             const auto attemptedResidual = ratio(attemptedDelta, attemptedOriginal);
+            //由剩余比例计算节省比例
+            //输入：residual 为剩余比例文本，空串表示比例缺失。
+            //输出：返回 1-residual 的文本，缺失仍返回空串，不做无符号减法。
             const auto saving = [](const std::string &residual) -> std::string {
                 if (residual.empty()) { return ""; }
                 std::ostringstream value;

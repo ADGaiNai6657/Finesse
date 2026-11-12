@@ -10,6 +10,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from verify_delta_results import check, rows, metadata, verify_delta_results
 
 
+#运行真实 Delta CLI、冻结配置、恢复证据和错误契约测试
+#输入：无显式参数；sys.argv[1] 提供待测可执行文件路径。
+#输出：返回 None；在临时目录验证 raw/replay、重复/短块、失败状态及空分母，通过打印说明，否则抛异常。
 def main():
     binary = Path(sys.argv[1]).resolve()
     repo = Path(__file__).resolve().parents[1]
@@ -26,12 +29,18 @@ def main():
             datasetDescription="Delta CLI binary edits; no random seed", outputDirectory="DO-NOT-USE", runId="inner",
             expectedSize="8192", minSize="2048", maxSize="65536", ncLevel="0", warmupRuns="1", measurementRuns="5",
             iterations="99", diagnostics="true", sfInput="unique")
+        #为 Delta 用例写入被引用的数据配置
+        #输入：updates：覆盖 input_values 的键值；闭包提供 root/input_values。
+        #输出：返回 None；写或替换临时 input.conf，不修改共享的基础配置字典。
         def save_input(**updates):
             values = input_values | updates
             (root / "input.conf").write_text("".join(f"{k}={v}\n" for k, v in values.items()))
         save_input()
         template = dict(line.split("=", 1) for line in (repo / "configs/fastcdc-dataset-4-delta.conf").read_text().splitlines() if line and not line.startswith("#"))
         template |= dict(inputConfig="input.conf", runId="delta-test")
+        #执行一组 Delta 配置并核对预期退出状态
+        #输入：name：临时配置名；values：可选完整配置；suffix：附加文本；success：预期状态；闭包提供 root/template/binary。
+        #输出：返回对应结果目录 Path；写配置并执行 --delta-config，退出状态不符时断言失败。
         def invoke(name, values=None, suffix="", success=True):
             values = template | dict(outputDirectory=name) if values is None else values
             config = root / (name + ".conf")

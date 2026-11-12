@@ -9,18 +9,30 @@
 #include <limits>
 #include <stdexcept>
 
+//检查测试条件，确保 Release 下也不会被关闭
+//输入：condition：必须成立的条件；message：条件不成立时的说明。
+//输出：无返回值；条件为假时抛 runtime_error，让测试显式失败。
 static auto require(const bool condition, const char *message) -> void {
     if (!condition) { throw std::runtime_error(message); }
 }
+//检查被测操作是否会显式拒绝错误输入
+//输入：function：无参数可调用对象，内部执行待检查操作。
+//输出：无返回值；捕获 std::exception 视为预期拒绝，未抛异常则使测试失败。
 template <typename Function>
 static auto rejects(Function function) -> void {
     bool failed = false;
     try { function(); } catch (const std::exception &) { failed = true; }
     require(failed, "expected explicit rejection");
 }
+//将字符串字节转换成只读 chunk 视图
+//输入：bytes：调用期间有效的字节串。
+//输出：返回借用该串内存的 ChunkView，不复制 payload。
 static auto view(const std::string_view bytes) -> ChunkView {
     return {reinterpret_cast<const std::uint8_t *>(bytes.data()), bytes.size()};
 }
+//生成可重复的二进制测试内容
+//输入：length：字节数；seed：xorshift32 初始状态。
+//输出：返回拥有 length 个伪随机字节的 string，种子按值传入，不影响外部状态。
 static auto noise(const std::size_t length, std::uint32_t seed) -> std::string {
     std::string bytes(length, '\0');
     for (auto &byte : bytes) {
@@ -29,6 +41,9 @@ static auto noise(const std::size_t length, std::uint32_t seed) -> std::string {
     }
     return bytes;
 }
+//验证真实 xdelta 往返、编辑/插删/空内容和损坏拒绝
+//输入：无，在函数内构造固定测试数据和错误场景。
+//输出：无返回值；检查全部通过则正常结束，任何不符都抛异常使测试失败。
 static auto testCodec() -> void {
     const auto base = noise(8192, 0x13579bdfU);
     std::vector<std::string> targets {base, "", std::string(4096, '\0'), noise(12000, 42)};
@@ -59,6 +74,9 @@ static auto testCodec() -> void {
     rejects([&] { encodeDelta(view(base), {nullptr, 1}); });
     rejects([&] { decodeDelta(view(base), "", 0); });
 }
+//验证真实 Raw/Delta 存储、无收益回退和原文释放后的恢复
+//输入：无，在函数内构造固定测试数据和错误场景。
+//输出：无返回值；检查全部通过则正常结束，任何不符都抛异常使测试失败。
 static auto testStore() -> void {
     EncodedStore store;
     auto base = noise(8192, 0x13579bdfU);
@@ -96,6 +114,9 @@ static auto testStore() -> void {
     store = intact; store.chunks[1].baseId.reset(); rejects([&] { restoreEncodedChunk(store, 1); });
     store = intact; store.chunks[1].id = 9; rejects([&] { restoreEncodedChunk(store, 1); });
 }
+//验证重复只引用、Raw-only 候选及原文池销毁后的全部恢复
+//输入：无，在函数内构造固定测试数据和错误场景。
+//输出：无返回值；检查全部通过则正常结束，任何不符都抛异常使测试失败。
 static auto testPipeline() -> void {
     std::array<EncodedStore, 2> stores;
     std::vector<std::string> expected;
@@ -138,6 +159,9 @@ static auto testPipeline() -> void {
     require(queryCandidate(index, 3, signature, "Finesse-Gear", PROFILE_ID)->chunkId == 100, "minimum ID replaced earliest insert");
     rejects([&] { insertSignature(index, 2, cross, "Finesse-Gear", PROFILE_ID); });
 }
+//执行本文件全部 C++ 正确性测试
+//输入：无显式输入，使用本文件构造的固定测试数据。
+//输出：返回 0 表示全部通过；捕获异常后打印原因并返回 1。
 int main() {
     try {
         testCodec(); testStore(); testPipeline();

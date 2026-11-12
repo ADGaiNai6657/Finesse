@@ -76,11 +76,17 @@ static constexpr std::uint64_t GEAR_TABLE[256] = {
 };
 
 // 单字节滚动：hash = (hash << 1) + GEAR_TABLE[byte]
+//将一个字节滚入 Gear 指纹
+//输入：hash：当前 64 位状态；byte：下一个字节。
+//输出：返回按 uint64 溢出规则计算的新状态，调用者自行保存。
 inline auto gearRoll(std::uint64_t hash, std::uint8_t byte) -> std::uint64_t {
     return (hash << 1) + GEAR_TABLE[byte];
 }
 
 // 将 length 个字节依次滚入 hash，并返回更新后的值
+//将一段字节依次滚入 Gear 指纹
+//输入：data/length：字节地址和长度，非空输入须可读；hash：调用者持有的初始状态。
+//输出：返回最终指纹，并通过 hash 引用回写；长度为 0 时保持原状态。
 auto updateGearHash(const std::uint8_t *data, std::size_t length, std::uint64_t &hash) -> std::uint64_t;
 
 #endif //FASTCDC_GEARHASH_H

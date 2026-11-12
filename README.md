@@ -4,7 +4,7 @@
 
 当前包含核心算法、固定参数与 SF 编码、CDC、raw/manifest、SHA-1＋长度/逐字节确认的精确去重、内存唯一块存储、SHA-256 完整性校验、预热与五轮测量、诊断和 CTest。D-21 已批准内存池及默认 sfInput=unique，保留显式 all 对照。D-22～D-24 已批准并接入固定 xdelta 源码、Raw 基块/单层 Delta、正收益回退、两算法独立 EncodedStore 及销毁原文池后的全部恢复。磁盘容器/重载、400MB LRU、并行与稳定系统吞吐仍在后续范围。
 
-准备阅读和审查代码时，先看 [代码 Review 导读](docs/13-code-review-guide.md)，按阅读路线核对算法、输入、计时和结果。
+准备阅读和审查代码时，先看 [代码 Review 导读](docs/13-code-review-guide.md)，按阅读路线核对算法、输入、计时和结果。本项目函数及头文件声明前使用中文说明用途、输入、输出和必要副作用；第三方 xdelta 保留上游原样，规范见 [代码风格](docs/05-coding-style.md)。
 
 后续代理协作遵循 [AGENT.md](AGENT.md)，标准自动发现入口为 [AGENTS.md](AGENTS.md)：文档/论文冲突必须报告，涉及取舍须询问人类，实现改动同步文档。
 

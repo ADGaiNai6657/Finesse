@@ -16,12 +16,18 @@
 #include <vector>
 
 // 不依赖 assert，Release/NDEBUG 下仍运行全部检查。
+//检查测试条件，确保 Release 下也不会被关闭
+//输入：condition：必须成立的条件；message：条件不成立时的说明。
+//输出：无返回值；条件为假时抛 runtime_error，让测试显式失败。
 static auto require(const bool condition, const char *message) -> void {
     if (!condition) {
         throw std::runtime_error(message);
     }
 }
 
+//检查被测操作是否会显式拒绝错误输入
+//输入：function：无参数可调用对象，内部执行待检查操作。
+//输出：无返回值；捕获 std::exception 视为预期拒绝，未抛异常则使测试失败。
 template <typename Function>
 static auto rejects(Function function) -> void {
     bool rejected = false;
@@ -29,6 +35,9 @@ static auto rejects(Function function) -> void {
     require(rejected, "expected explicit rejection");
 }
 
+//用直观递推计算测试用 Gear 参考值
+//输入：bytes/length：有效字节缓冲及长度；hash：可选初始状态，默认 0。
+//输出：返回逐字节乘 2 加表值的 uint64 结果，不调用生产滚动函数。
 static auto referenceHash(const std::uint8_t *bytes,
                           const std::size_t length,
                           std::uint64_t hash = 0) -> std::uint64_t {
@@ -38,6 +47,9 @@ static auto referenceHash(const std::uint8_t *bytes,
     return hash;
 }
 
+//独立编码四个 feature 并计算 SF 参考值
+//输入：values：四个按序 uint64 feature。
+//输出：返回小端字节串的参考 Gear 指纹，供核对生产 SF 编码与哈希。
 static auto referenceSF(const FeatureGroup &values) -> std::uint64_t {
     std::vector<std::uint8_t> bytes;
     for (auto value : values) {
@@ -49,6 +61,9 @@ static auto referenceSF(const FeatureGroup &values) -> std::uint64_t {
     return referenceHash(bytes.data(), bytes.size());
 }
 
+//用预存 Gear 序列计算两算法的朴素参考签名
+//输入：bytes：测试字节数组，调用者保证长度至少 12；finesse：true 选择 Finesse，false 选择 NTransform。
+//输出：返回成功状态、features 和 SF，供与生产提取结果逐项比较。
 static auto referenceSignature(const std::vector<std::uint8_t> &bytes, const bool finesse) -> SignatureResult {
     std::vector<std::uint64_t> fingerprints;
     std::uint64_t hash = 0;
@@ -93,16 +108,25 @@ static auto referenceSignature(const std::vector<std::uint8_t> &bytes, const boo
     return result;
 }
 
+//检查两个提取结果的所有字段是否相同
+//输入：left/right：待比较的 SignatureResult。
+//输出：返回状态、features 和 SF 是否都相等，不修改结果。
 static auto same(const SignatureResult &left, const SignatureResult &right) -> bool {
     return left.status == right.status && left.features == right.features && left.superFeatures == right.superFeatures;
 }
 
+//验证 Gear 已知答案、分批更新、空输入和 uint64 回绕
+//输入：无，在函数内构造固定测试数据和错误场景。
+//输出：无返回值；检查全部通过则正常结束，任何不符都抛异常使测试失败。
 static auto testGear() -> void {
     std::array<std::uint8_t, 65> bytes {};
     for (std::size_t i = 0; i < bytes.size(); ++i) { bytes[i] = static_cast<std::uint8_t>(i); }
     const std::array<std::size_t, 5> lengths {0, 1, 63, 64, 65};
-    const std::array<std::uint64_t, 5> known {0, 0xe467a339562cde78ULL, 0x4d1be82ba8f7b21bULL,
-        0x470f62c58c91e259ULL, 0x3f304f7800f06bd2ULL};
+    const std::array<std::uint64_t, 5> known {0,
+                                              0xe467a339562cde78ULL,
+                                              0x4d1be82ba8f7b21bULL,
+                                              0x470f62c58c91e259ULL,
+                                              0x3f304f7800f06bd2ULL};
     for (std::size_t i = 0; i < lengths.size(); ++i) {
         std::uint64_t hash = 0;
         require(updateGearHash(bytes.data(), lengths[i], hash) == known[i], "Gear known answer");
@@ -119,6 +143,9 @@ static auto testGear() -> void {
         == referenceHash(bytes.data() + 64, 0, std::numeric_limits<std::uint64_t>::max()) * 2 + GEAR_TABLE[255], "Gear wrap");
 }
 
+//验证 12 段边界覆盖、余数分配和极大长度
+//输入：无，在函数内构造固定测试数据和错误场景。
+//输出：无返回值；检查全部通过则正常结束，任何不符都抛异常使测试失败。
 static auto testBoundaries() -> void {
     const std::array<std::size_t, FEATURE_COUNT + 1> expected {0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 14};
     for (std::size_t i = 0; i <= FEATURE_COUNT; ++i) {
@@ -142,6 +169,9 @@ static auto testBoundaries() -> void {
     rejects([] { subchunkBoundary(14, FEATURE_COUNT + 1); });
 }
 
+//验证两算法分组、稳定排名及 SF 小端编码
+//输入：无，在函数内构造固定测试数据和错误场景。
+//输出：无返回值；检查全部通过则正常结束，任何不符都抛异常使测试失败。
 static auto testGrouping() -> void {
     const FeatureValues figure {0xff9ab74e, 0xfff82845, 0xfff1da26, 0xff7f156c, 0xff12c814, 0xffe3735c,
         0xff32bd8e, 0xfff9b8d2, 0xffe87e52, 0xfff93729, 0xffe2fcaf, 0xff16ecf3};
@@ -167,6 +197,9 @@ static auto testGrouping() -> void {
     require(hashSuperFeatures({values, values, values})[0] == referenceSF(values), "SF reference hash");
 }
 
+//将两算法与参考签名逐项比较并检查非法输入和状态隔离
+//输入：无，在函数内构造固定测试数据和错误场景。
+//输出：无返回值；检查全部通过则正常结束，任何不符都抛异常使测试失败。
 static auto testExtraction() -> void {
     const HashConfig config;
     const auto parameters = approvedTransformParameters();
@@ -212,6 +245,9 @@ static auto testExtraction() -> void {
     require(transformFingerprint(0x1234567800000001ULL, 0xffffffffU, 2) == 1, "low 32 bits only");
 }
 
+//验证 FastCDC 切点、空文件、短尾块和配置拒绝
+//输入：无，在函数内构造固定测试数据和错误场景。
+//输出：无返回值；检查全部通过则正常结束，任何不符都抛异常使测试失败。
 static auto testCDC() -> void {
     const auto config = makeFastCDCConfig(8192,2048,0);
     require(config.MaskA == 0x0000d90303530000ULL && config.MaskS == config.MaskA
@@ -255,6 +291,9 @@ static auto testCDC() -> void {
     rejects([&] { chunkBoundaries("x",invalid); });
 }
 
+//验证跨槽 FirstFit、最早插入及算法/配置隔离
+//输入：无，在函数内构造固定测试数据和错误场景。
+//输出：无返回值；检查全部通过则正常结束，任何不符都抛异常使测试失败。
 static auto testIndex() -> void {
     auto index = makeResemblanceIndex("Finesse-Gear", PROFILE_ID);
     const auto signature = [](SuperFeatures sf) { return SignatureResult {ExtractStatus::Ok, {}, sf}; };
@@ -272,6 +311,9 @@ static auto testIndex() -> void {
     require(tied && tied->historicalSlot == 0, "historical lowest tied slot");
 }
 
+//验证 CSV、UTF-8、SHA-256、整数解析和溢出检查
+//输入：无，在函数内构造固定测试数据和错误场景。
+//输出：无返回值；检查全部通过则正常结束，任何不符都抛异常使测试失败。
 static auto testIO() -> void {
     const CsvRows rows {{"a", "b", "c"}, {"one,comma", "quote\"x", "multi\nline"}, {"中文", "", "x\r\ny"}};
     require(parseCsv(encodeCsv(rows)) == rows, "CSV round trip");
@@ -287,6 +329,9 @@ static auto testIO() -> void {
     require(sha256("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", "SHA-256 known answer");
 }
 
+//执行本文件全部 C++ 正确性测试
+//输入：无显式输入，使用本文件构造的固定测试数据。
+//输出：返回 0 表示全部通过；捕获异常后打印原因并返回 1。
 int main() {
     try {
         testGear(); testBoundaries(); testGrouping(); testExtraction(); testCDC(); testIndex(); testIO();

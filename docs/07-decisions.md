@@ -95,3 +95,9 @@ D-14 已冻结为上述方案：不在子块边界重置 Gear，不将 Finesse f
 | D-24 | 内存 EncodedStore：每唯一 ID 只保存 Raw 或 Delta，重复仅引用；两算法独立构造；销毁原文池后恢复所有出现；新 `--delta-config` | inputConfig 要求 unique，仅导入数据/CDC/Gear，忽略旧输出/迭代和微基准；四组各算法构建/核验一次，报告 payload 质量，不能声称稳定系统吞吐 |
 
 上述批准更新 D-13 的对应部分，不授权磁盘容器、重载、400MB 磁盘 LRU、并行系统或多层链。D-12 的一次预热/五次正式测量继续适用于原 SF 入口，不套用到本次单次质量验证。D-03 的 DCE 歧义继续保留；输出 attempted/accepted/stored 各自的 byte-weighted residual/saving。
+
+## 2026-11-08：函数阅读注释与保留上游边界
+
+用户要求模仿其审查代码时的函数前中文注释，为每个函数说明用途、输入和输出，并在修改前先提交原版本。用户已手动提交基线 `620c35f`（Add explanatory comments and tidy formatting in SF implementation），随后明确指示继续修改。
+
+针对与固定上游源码要求可能冲突的范围，用户明确选择“仅本项目代码，保留 xdelta 上游原样（建议）”。据此覆盖 src/tests/scripts 中的命名函数、头文件声明、局部函数及命名 lambda，third_party/xdelta 不改动。具体注释格式见 [05](05-coding-style.md)。本轮只插入函数阅读注释；不修改函数签名、实现语句、算法、配置或实验统计。src 内 FastCDC 副本补充注释后，由 08/10 明确记录来源与当前本地差异，不再声称当前文件逐字节等于上游。

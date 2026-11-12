@@ -11,14 +11,23 @@
 
 using SteadyClock = std::chrono::steady_clock;
 
+//将字符串字节转换成只读 chunk 视图
+//输入：bytes：调用期间有效的字节串。
+//输出：返回借用该串内存的 ChunkView，不复制 payload。
 static auto view(const std::string_view bytes) -> ChunkView {
     return {reinterpret_cast<const std::uint8_t *>(bytes.data()), bytes.size()};
 }
 
+//计算从指定时刻到当前的单调时钟耗时
+//输入：start：steady_clock 起始时刻。
+//输出：返回经过的纳秒数，不修改起始时刻。
 static auto elapsedSince(const SteadyClock::time_point start) -> std::int64_t {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(SteadyClock::now() - start).count();
 }
 
+//按 ID 检查并取得编码池记录
+//输入：store：编码池；id：目标 encoded/stored ID。
+//输出：返回只读记录引用；越界或记录自身 ID 不一致时抛异常，引用依赖池生命周期。
 static auto checkedRecord(const EncodedStore &store, const StoredChunkId id) -> const EncodedChunk & {
     if (id >= store.chunks.size() || store.chunks[static_cast<std::size_t>(id)].id != id) {
         throw std::invalid_argument("invalid encoded chunk ID");
@@ -26,12 +35,18 @@ static auto checkedRecord(const EncodedStore &store, const StoredChunkId id) -> 
     return store.chunks[static_cast<std::size_t>(id)];
 }
 
+//检查恢复内容的长度和 SHA-256 是否与编码记录一致
+//输入：record：记录的原长和完整性摘要；bytes：待验证内容。
+//输出：无返回值；长度或摘要不符时抛异常，不修改记录和字节。
 static auto verifyBytes(const EncodedChunk &record, const std::string_view bytes) -> void {
     if (bytes.size() != record.originalLength || sha256(bytes) != record.restoredSha256) {
         throw std::runtime_error("encoded chunk length/integrity verification failed");
     }
 }
 
+//仅从编码池恢复一个唯一 chunk
+//输入：store：拥有 Raw/Delta payload 的编码池；id：要恢复的唯一 ID，不接收原文池或源文件。
+//输出：返回拥有原文字节的 string；只允许此前合格 Raw 基块、深度 1，并校验长度和 SHA-256，损坏或非法引用抛异常。
 auto restoreEncodedChunk(const EncodedStore &store, const StoredChunkId id) -> std::string {
     const auto &record = checkedRecord(store, id);
     if (record.kind == PayloadKind::Raw) {
@@ -58,6 +73,9 @@ auto restoreEncodedChunk(const EncodedStore &store, const StoredChunkId id) -> s
     return restored;
 }
 
+//为一次唯一内容真实编码并选择 Raw 或 Delta 表示
+//输入：store：待追加编码池；firstChunkId：首次出现 ID；target：原文视图；candidate：可选的此前合格 Raw 候选。
+//输出：返回最终表示并追加一条记录；匹配时 encode 后完整字节回放，仅严格更小才存 Delta，重复应由上层过滤，错误抛异常。
 auto appendEncodedChunk(EncodedStore &store, const ChunkId firstChunkId, const ChunkView target,
                         const std::optional<Candidate> candidate) -> PayloadKind {
     if (target.length != 0 && target.data == nullptr) {
@@ -108,6 +126,9 @@ auto appendEncodedChunk(EncodedStore &store, const ChunkId firstChunkId, const C
     return kind;
 }
 
+//按首次出现顺序为指定算法构造独立编码池
+//输入：input：已精确去重的原文池和首次出现映射；algorithm：批准的算法名。
+//输出：返回拥有 Raw/Delta 内容的 EncodedStore，不保留原文视图；只有最终合格 Raw 入候选索引，错误抛异常。
 auto buildEncodedStore(const ExperimentInput &input, const std::string_view algorithm) -> EncodedStore {
     const auto start = SteadyClock::now();
     auto index = makeResemblanceIndex(algorithm, PROFILE_ID);

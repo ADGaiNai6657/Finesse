@@ -11,22 +11,34 @@ import sys
 import tempfile
 
 
+#检查集成测试或审计条件
+#输入：condition：必须成立的条件；message：失败时的说明。
+#输出：返回 None；条件为假时抛 AssertionError。
 def check(condition, message):
     if not condition:
         raise AssertionError(message)
 
 
+#读取带表头的 CSV 产物
+#输入：path：CSV 文件路径。
+#输出：返回按行排列的字典列表，字段保留为字符串；读取或解析失败时抛异常。
 def rows(path):
     with path.open(newline="", encoding="utf-8") as stream:
         return list(csv.DictReader(stream))
 
 
+#将测试中的 CSV 行编码为 UTF-8 字节
+#输入：data：二维字段行，按调用者顺序输出。
+#输出：返回带标准 CSV 转义和换行的 bytes，供写入或重算摘要。
 def csv_bytes(data):
     stream = io.StringIO(newline="")
     csv.writer(stream, lineterminator="\n").writerows(data)
     return stream.getvalue().encode()
 
 
+#运行 SF CLI、重放、失败路径和统计独立重算测试
+#输入：无显式参数；sys.argv[1] 提供待测 Finesse 可执行文件路径。
+#输出：返回 None；在临时目录运行用例，全部通过打印说明，断言或子进程异常使测试失败。
 def main():
     binary = Path(sys.argv[1]).resolve()
     with tempfile.TemporaryDirectory(prefix="finesse-test-") as temporary:
@@ -49,6 +61,9 @@ def main():
             outputDirectory="raw", runId="integration", expectedSize="8192", minSize="2048", maxSize="65536",
             ncLevel="0", warmupRuns="1", measurementRuns="5", iterations="2", diagnostics="true", sfInput="all")
 
+        #为一个 SF CLI 用例写配置并检查退出状态
+        #输入：name：临时配置名；updates：覆盖 base 的键值；success：预期成功与否；suffix：附加配置文本；闭包提供 root/base/binary。
+        #输出：返回 CompletedProcess；写配置、执行 --config 并检查返回码是否符合预期，不符抛 AssertionError。
         def run(name, updates=None, success=True, suffix=""):
             values = base | (updates or {})
             path = root / (name + ".conf")
@@ -122,6 +137,9 @@ def main():
         bad_dir.mkdir()
         original_rows = list(csv.reader((output / "manifest.csv").open(newline="")))
 
+        #构造损坏清单以验证 CLI 的范围、ID 或摘要拒绝
+        #输入：name：用例名；alter：修改清单行的回调；checksum_alter：可选摘要行修改回调；闭包提供原清单和测试目录。
+        #输出：返回 None；写清单及校验文件并执行预期失败用例，未拒绝则断言失败。
         def bad_manifest(name, alter, checksum_alter=None):
             modified = [row.copy() for row in original_rows]
             alter(modified)

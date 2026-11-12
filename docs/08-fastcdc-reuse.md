@@ -9,7 +9,7 @@
 - 本机 FastCDC HEAD 与该远端提交相同，工作区检查未显示修改。
 - `main` 的 `de52ffdf...` 仅为初版，不再作为摘取基准。
 
-GearHash 与 BreakingApart 为原样摘取；D-21 的 Hash/ChunkStore 参考同一固定提交的 SHA-1、候选桶与字节确认语义进行适配，实际来源与差异见 10。
+GearHash 与 BreakingApart 初次为原样摘取；2026-11-08 按用户要求为本地副本补充函数阅读注释，GearHash.cpp 同时保留用户审查提交对 length 的顶层 const，不改变算法与切点语义；D-21 的 Hash/ChunkStore 参考同一固定提交的 SHA-1、候选桶与字节确认语义进行适配，实际来源与差异见 10。
 
 ## 模块和复用边界
 

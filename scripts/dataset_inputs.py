@@ -9,15 +9,24 @@ import stat
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
+#按项目根目录解析准备脚本的路径参数
+#输入：value：相对项目根目录或绝对的路径。
+#输出：返回 resolve 后的 Path，不以启动 cwd 为相对基准。
 def project_path(value):
     path = Path(value)
     return (path if path.is_absolute() else PROJECT_ROOT / path).resolve()
 
 
+#把文件路径转换为相对目录的可移植文本
+#输入：path：目标路径；directory：相对基准目录。
+#输出：返回使用正斜线的相对路径字符串，不读写文件。
 def relative(path, directory):
     return Path(os.path.relpath(path, directory)).as_posix()
 
 
+#只读枚举数据文件并单独记录 macOS 元数据
+#输入：directory：数据目录 Path；recursive：是否递归子目录。
+#输出：返回排序后的 (files, excluded)，每项为路径和字节数；目录缺失、符号链接或非普通项抛异常。
 def collect(directory, recursive):
     files = []
     excluded = []
@@ -43,12 +52,18 @@ def collect(directory, recursive):
     return sorted(files), sorted(excluded)
 
 
+#将二维记录编码成 CSV 文本
+#输入：rows：按输出顺序排列的字段行。
+#输出：返回带必要转义和换行的字符串，不写文件。
 def encode_csv(rows):
     text = io.StringIO(newline="")
     csv.writer(text, lineterminator="\n").writerows(rows)
     return text.getvalue()
 
 
+#为各组数据导出相对路径清单和枚举摘要
+#输入：dataset_root：数据根目录；output：必须不存在的输出目录；groups：(组号,是否递归)序列；prefix：文件名前缀。
+#输出：返回 None；写各组 files.txt、inventory.csv 和 excluded-files.csv 并打印汇总，原数据只读且已有目录拒绝覆盖。
 def prepare_inputs(dataset_root, output, groups, prefix):
     inventory = [["dataset", "fileCount", "inputBytes", "excludedFiles", "excludedBytes", "filesListSha256"]]
     excluded_rows = [["dataset", "file", "bytes", "reason"]]

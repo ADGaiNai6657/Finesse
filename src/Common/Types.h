@@ -53,8 +53,17 @@ struct HashConfig {
     std::string_view shortChunkPolicy = "exclude-length-lt-12";
 };
 
+//检查哈希配置是否与已批准的 Gear 配置一致
+//输入：config：待检查的配置。
+//输出：返回是否完全符合冻结配置，不修改 config。
 auto validateHashConfig(const HashConfig &config) -> bool;
+//检查 chunk 是否可以进入 SF 提取
+//输入：chunk：只读字节视图；config：哈希配置。
+//输出：返回输入无效、配置无效、长度不支持或成功的状态，不计算签名。
 auto validateChunk(ChunkView chunk, const HashConfig &config) -> ExtractStatus;
 
 // floor(index*length/N)，以商和余数计算，避免 index*length 溢出。
+//计算 chunk 均分成 12 段时的第 index 个边界
+//输入：length：chunk 字节数；index：边界序号 0～12。
+//输出：返回 floor(index*length/12) 的字节下标；序号越界时抛异常。
 auto subchunkBoundary(std::size_t length, std::size_t index) -> std::size_t;

@@ -5,10 +5,12 @@
 
 | 原路径/本项目路径 | 原文件 SHA-256 | 适配 |
 | --- | --- | --- |
-| `src/GearHash/GearHash.h` | `b8ecf15d6c81faa4e89b7c56f7f230cc8eb49a59bcd0b3fd9a0756de6133c7f6` | 原样摘取；未改动 |
-| `src/GearHash/GearHash.cpp` | `877b4bbbfa1ee686218f56af7d69888b705afef9d6a8bd2397f583ffd863edac` | 原样摘取；未改动 |
-| `src/BreakingApart/BreakingApart.h` | `d5b55f9f4ca644167a7770ee3cc3754da5bb4e3debd4da8167e6d5b2aafb9ba6` | 原样摘取；未改动 |
-| `src/BreakingApart/BreakingApart.cpp` | `67b1ae15256d3cc106115bb015605cf70d96a2e643efdad3d8999c2537acbeec` | 原样摘取；未改动 |
+| `src/GearHash/GearHash.h` | `b8ecf15d6c81faa4e89b7c56f7f230cc8eb49a59bcd0b3fd9a0756de6133c7f6` | 初次原样摘取；当前本地增加函数阅读注释 |
+| `src/GearHash/GearHash.cpp` | `877b4bbbfa1ee686218f56af7d69888b705afef9d6a8bd2397f583ffd863edac` | 初次原样摘取；当前增加阅读注释，保留用户审查时对 length 的顶层 const |
+| `src/BreakingApart/BreakingApart.h` | `d5b55f9f4ca644167a7770ee3cc3754da5bb4e3debd4da8167e6d5b2aafb9ba6` | 初次原样摘取；当前本地增加函数阅读注释 |
+| `src/BreakingApart/BreakingApart.cpp` | `67b1ae15256d3cc106115bb015605cf70d96a2e643efdad3d8999c2537acbeec` | 初次原样摘取；当前本地增加函数阅读注释 |
+
+表中摘要始终指原始上游文件，不改写为当前本地副本摘要。2026-11-08 用户要求各函数补充用途/输入/输出注释，且明确排除 third_party/xdelta；src 内上述本地副本据此增加注释，不能再称当前文件与上游逐字节相同。本轮相对用户已提交基线只插入注释，原有表值、函数签名和可执行语句保持不变；实际当前文件摘要仍由后续构建的 source-files.csv 记录。
 
 新增 `Chunker.h/.cpp` 在外层严格验证 D-16、拒绝零最小长度、检查偏移溢出与切点全覆盖；没有改变来源判定字节语义。
 D-21 已参考下列来源适配 Hash/ChunkStore，保留 EVP SHA-1、同摘要候选桶及长度/逐字节确认。新的实现使用显式实验独占状态与 storedId，不照搬全局变量；SHA-256 完整性校验继续独立使用。

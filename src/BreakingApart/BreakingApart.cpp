@@ -21,6 +21,9 @@ namespace {
 
     // 生成具有 bits 个 1 的掩码：在 [16, 49] 上等距分布，低位留零以保证
     // 至少 16 字节的滑动窗口。11/13/15 直接使用论文公开常量。
+    //按需要的置位数生成 CDC 判定掩码
+    //输入：bits：目标置位数；11、13、15 使用来源代码的固定掩码。
+    //输出：返回 64 位掩码；bits<=0 时返回 0，其余按现有分布规则构造。
     auto buildMask(const int bits) -> std::uint64_t {
         if (bits <= 0) {
             return 0;
@@ -44,6 +47,9 @@ namespace {
     }
 
     // 前段（< NormalSize）与后段（>= NormalSize）使用的掩码。
+    //选择当前扫描位置应使用的 CDC 掩码
+    //输入：cfg：分块配置；chunkOffset：相对块起点的偏移；isNC：是否启用归一化。
+    //输出：返回 MaskA 或按 NormalSize 分段选择的 MaskS/MaskL，不修改配置。
     auto maskFor(const BreakingApartConfig& cfg, const std::size_t chunkOffset, const bool isNC) -> std::uint64_t {
         if (!isNC) {
             return cfg.MaskA;
@@ -53,6 +59,9 @@ namespace {
 
 } // namespace
 
+//根据块长和 NC 等级构造 FastCDC 参数
+//输入：expectedSize：期望块长；minSize：最小块长；ncLevel：NC 等级，按现有规则限制到 0～3。
+//输出：返回含块长、掩码和 NC 等级的配置；批准参数的严格检查由外层完成。
 auto makeFastCDCConfig(const std::size_t expectedSize,
                        const std::size_t minSize,
                        const int ncLevel) -> BreakingApartConfig {
@@ -78,6 +87,9 @@ auto makeFastCDCConfig(const std::size_t expectedSize,
     return {minSize, normalSize, expectedSize * 8, maskA, maskS, maskL, level};
 }
 
+//扫描一段缓冲并追加一组 FastCDC 切点
+//输入：data：只读文件字节；vPosition：待追加的切点分组；config：分块参数。
+//输出：无返回值；在 vPosition 末尾追加一组切点，非空输入末切点为 data.size()，空输入追加空组。
 auto BoundariesFinder(std::string_view data,
                       std::vector<std::vector<std::size_t>>& vPosition,
                       const BreakingApartConfig& config) -> void {

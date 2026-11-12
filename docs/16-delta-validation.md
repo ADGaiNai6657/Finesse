@@ -64,3 +64,7 @@ python3 scripts/verify_delta_results.py results/fastcdc-dataset-1-delta-release-
 ## 未实现与结论限制
 
 磁盘容器、跨进程 Raw/Delta 重载、论文400MB LRU、并行流水线、多层链和原论文六数据集仍未实现。单次构造、编码及恢复的纳秒观察保存在 CSV，未据此报告稳定系统吞吐倍数。原 SF 五轮计时保持独立；本次结果只能说明当前 FastCDC/Gear 变体、Raw-only/深度1规则及固定 codec 下的 payload 质量和进程内恢复正确性，不是原论文系统或 Rabin 的逐位复现。
+
+## 2026-11-08：函数阅读注释回归
+
+以用户提交的 620c35f 为基线，为本项目函数/声明及命名 lambda 补充用途、输入和输出注释。源码差异核对确认 C++ 仅插入注释行，Python AST 与非注释 token 不变；third_party/xdelta 未修改。Debug（ASan/UBSan）与 Release 各自 6/6 CTest 通过。本次未重跑四组数据，不替换上文历史质量结果；注释和文档参与构建摘要，sourceDigest 与历史运行不同属于正常现象。

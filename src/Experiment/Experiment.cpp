@@ -28,12 +28,18 @@
 static constexpr std::size_t MEASUREMENT_RUNS = 5;
 static constexpr std::array<std::string_view, 2> ALGORITHMS {"Finesse-Gear", "NTransform-Gear"};
 
+//将浮点统计值转换成记录文本
+//输入：value：待导出的 double。
+//输出：返回使用 17 位有效数字的字符串，不改动数值。
 static auto number(const double value) -> std::string {
     std::ostringstream out;
     out << std::setprecision(17) << value;
     return out.str();
 }
 
+//取得当前 UTC 时间并格式化
+//输入：无，读取系统时钟。
+//输出：返回 YYYY-MM-DDTHH:MM:SSZ 文本，用于运行元信息。
 static auto utcTimestamp() -> std::string {
     const auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::tm utc {};
@@ -43,6 +49,9 @@ static auto utcTimestamp() -> std::string {
     return out.str();
 }
 
+//采集当前平台与内存快照用于复现记录
+//输入：无，读取 OS、CPU 和内存接口。
+//输出：返回 key=value 文本，含架构、CPU 和内存信息；受检查的平台查询失败时抛异常。
 static auto platformMetadata() -> std::string {
     struct utsname info {};
     if (uname(&info) != 0) {
@@ -82,10 +91,16 @@ static auto platformMetadata() -> std::string {
     return out.str();
 }
 
+//将路径表示为相对指定目录的通用路径文本
+//输入：path：要记录的路径；directory：导出文件所在目录。
+//输出：返回词法相对路径字符串，不访问文件内容。
 static auto relativePath(const std::filesystem::path &path, const std::filesystem::path &directory) -> std::string {
     return path.lexically_relative(directory).generic_string();
 }
 
+//导出全部出现清单和源文件完整性记录
+//输入：config：输出目录；input：来源元信息和全部出现。
+//输出：无返回值；写 manifest.csv、checksums.csv、source-checksums.csv，包含空源文件摘要，I/O 失败抛异常。
 auto exportExperimentInput(const ExperimentConfig &config, const ExperimentInput &input) -> void {
     CsvRows manifest {{"chunkId", "file", "offset", "length"}};
     std::set<std::size_t> referenced;
@@ -110,6 +125,9 @@ auto exportExperimentInput(const ExperimentConfig &config, const ExperimentInput
     writeFile(config.outputDirectory / "source-checksums.csv", encodeCsv(sourceChecksums));
 }
 
+//导出唯一原文、出现引用和精确去重统计
+//输入：config：输出目录；input：原文池、全部出现和首次位置映射。
+//输出：无返回值；写 stored-chunks.csv、chunk-references.csv、deduplication.csv，不把 payload 写入 CSV，错误抛异常。
 auto exportChunkStore(const ExperimentConfig &config, const ExperimentInput &input) -> void {
     CsvRows storedRows {{"storedId", "firstChunkId", "length", "sha1", "referenceCount"}};
     for (const auto &stored : input.store.chunks) {
@@ -137,6 +155,9 @@ auto exportChunkStore(const ExperimentConfig &config, const ExperimentInput &inp
     writeFile(config.outputDirectory / "deduplication.csv", encodeCsv(summary));
 }
 
+//导出实际使用的 N-transform 固定参数并校验构建摘要
+//输入：无，从 approvedTransformParameters 取得 D-15 参数。
+//输出：返回参数 CSV；与构建时参数文件的 SHA-256 不一致时抛异常。
 auto experimentParameterCsv() -> std::string {
     const auto parameters = approvedTransformParameters();
     CsvRows rows {{"i", "m_i", "a_i"}};
@@ -154,12 +175,18 @@ auto experimentParameterCsv() -> std::string {
     return bytes;
 }
 
+//把一个 uint64 值按小端追加到摘要缓冲
+//输入：bytes：待追加字节串；value：要编码的 64 位值。
+//输出：无返回值；在 bytes 末尾增加 8 字节，不改动原有前缀。
 static auto appendValue(std::string &bytes, const std::uint64_t value) -> void {
     for (std::size_t b = 0; b < FEATURE_BYTES; ++b) {
         bytes += static_cast<char>((value >> (b * 8)) & 0xffU);
     }
 }
 
+//消费全部提取结果并计算可复核摘要
+//输入：results：按迭代和 chunk 顺序保存的签名结果。
+//输出：返回 features 后接 SF、各 uint64 小端编码的 SHA-256；存在非成功结果或长度溢出时抛异常。
 static auto outputDigest(const std::vector<SignatureResult> &results) -> std::string {
     std::string bytes;
     const auto size = checkedMultiply(results.size(), (FEATURE_COUNT + SUPER_FEATURE_COUNT) * FEATURE_BYTES);
@@ -181,11 +208,17 @@ static auto outputDigest(const std::vector<SignatureResult> &results) -> std::st
     return sha256(bytes);
 }
 
+//按算法下标分派完整 SF 提取
+//输入：algorithm：调用者提供 0=Finesse、1=NTransform；chunk：字节视图；hash：Gear 配置；parameters：基线参数。
+//输出：返回所选算法的 SignatureResult；此内部函数将非 0 下标分派到 NTransform。
 static auto extract(const std::size_t algorithm, const ChunkView chunk, const HashConfig &hash,
                      const TransformParameters &parameters) -> SignatureResult {
     return algorithm == 0 ? extractFinesse(chunk, hash) : extractNTransform(chunk, hash, parameters);
 }
 
+//独立运行所选集合的全量 SF 候选诊断
+//输入：config：输出配置；input：原文池；selected：unique/all 位置；hash/parameters：冻结提取参数。
+//输出：无返回值；为两算法各建索引，跳过短块，查询后插入并写 diagnostics.csv，不参与 SF 计时。
 static auto runDiagnostics(const ExperimentConfig &config, const ExperimentInput &input, const SFInputSelection &selected,
                            const HashConfig &hash, const TransformParameters &parameters) -> void {
     CsvRows rows {{"algorithm", "profileId", "chunkId", "candidateId", "querySlot", "historicalSlot", "status"}};
@@ -207,6 +240,9 @@ static auto runDiagnostics(const ExperimentConfig &config, const ExperimentInput
     writeFile(config.outputDirectory / "diagnostics.csv", encodeCsv(rows));
 }
 
+//执行 SF 微基准、校验输出并导出统计
+//输入：config：已校验的实验配置和新结果目录。
+//输出：无返回值；加载去重后运行一次预热、五轮交替测量，导出摘要/汇总/可选诊断；失败记录原因并抛异常，拒绝覆盖。
 auto runExperiment(const ExperimentConfig &config) -> void {
     std::filesystem::create_directories(config.outputDirectory.parent_path());
     if (!std::filesystem::create_directory(config.outputDirectory)) {

@@ -4,6 +4,9 @@ import argparse
 from pathlib import Path
 
 
+#生成固定种子的 synthetic 验收数据及来源描述
+#输入：无显式参数，通过命令行读取必须新建的输出 directory。
+#输出：返回 None；写固定数据、dataset.txt 和 files.txt 并打印描述路径，已有目录或写入错误抛异常。
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("directory", type=Path)

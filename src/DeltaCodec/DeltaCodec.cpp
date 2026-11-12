@@ -7,6 +7,9 @@
 #include <limits>
 #include <stdexcept>
 
+//检查传给 xdelta 的只读字节视图
+//输入：view：字节地址和长度，调用期间必须有效。
+//输出：无返回值；非零长度空地址或长度超出 xdelta 类型时抛异常。
 static auto validateView(const ChunkView view) -> void {
     if (view.length > 0 && view.data == nullptr) {
         throw std::invalid_argument("null delta codec input with nonzero length");
@@ -16,6 +19,9 @@ static auto validateView(const ChunkView view) -> void {
     }
 }
 
+//以基块 B 为来源，将目标 A 编码成真正的 VCDIFF
+//输入：base：B 的只读视图；target：A 的只读视图，均在调用期间有效。
+//输出：返回拥有 Delta 字节的 string；固定 level6、Adler32、无二级压缩，非法输入或编码失败抛异常。
 auto encodeDelta(const ChunkView base, const ChunkView target) -> std::string {
     validateView(base);
     validateView(target);
@@ -51,6 +57,9 @@ auto encodeDelta(const ChunkView base, const ChunkView target) -> std::string {
     }
 }
 
+//使用基块 B 和 VCDIFF 恢复目标 A
+//输入：base：B 的只读视图；delta：VCDIFF 字节；expectedLength：必须恢复出的长度。
+//输出：返回拥有恢复字节的 string；长度不符、Adler32 校验或解码失败时抛异常，调用者另核对目标内容。
 auto decodeDelta(const ChunkView base, const std::string_view delta, const std::size_t expectedLength) -> std::string {
     validateView(base);
     if (delta.empty()) {

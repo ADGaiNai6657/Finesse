@@ -16,6 +16,8 @@
 
 论文使用 Rabin，本项目按审批采用 Gear；Finesse feature 保留 64 位，NTransform 的变换结果保留 32 位后零扩展。这些是已经确定的实验语义。涉及这些行为的修改，应先对照 [决策记录](07-decisions.md)，将新歧义或论文与文档的冲突提交你确认。
 
+函数前已按你的审查习惯补充三行中文说明：第一行说明用途，`输入` 列参数与必要前提，`输出` 列返回含义及状态回写、文件写入或错误行为。头文件可先看接口契约，定义处可就地对照实现；测试和脚本中的局部命名函数也采用同样说明。third_party/xdelta 按你明确选择保留上游原样。
+
 ## 2. 建议阅读顺序
 
 建议先走完下表的前五步，形成整体认识，再深入输入、计时与异常处理。第一遍可以跳过 Gear 的 256 项表值和 CSV 解析细节。
@@ -71,7 +73,7 @@ results/                     运行产物，不参与算法实现
 
 可以将依赖理解为：核心算法依赖 `Common`、`GearHash` 和 `SuperFeature`；`Experiment` 组织算法、输入与诊断；`main` 只负责调用。Python 用于测量前准备和测试，正式 C++ 提取路径不调用 Python。
 
-GearHash 和 BreakingApart 的四个上游文件为原样摘取；`Chunker` 是新增适配。Hash/ChunkStore 参考同一固定 FastCDC 提交的 EVP SHA-1、候选桶与字节确认，适配为显式状态和 ID 引用。核对迁移是否改变行为时，使用 [摘取记录](10-source-provenance.md) 中的固定提交和文件摘要。
+GearHash 和 BreakingApart 的四个文件最初为原样摘取，当前本地副本已补充函数阅读注释；GearHash.cpp 还保留用户审查时对 length 增加的顶层 const；`Chunker` 是新增适配。Hash/ChunkStore 参考同一固定 FastCDC 提交的 EVP SHA-1、候选桶与字节确认，适配为显式状态和 ID 引用。核对迁移是否改变行为时，使用 [摘取记录](10-source-provenance.md) 中的固定提交和文件摘要。
 
 ## 4. 先沿一条完整路径走一遍
 
