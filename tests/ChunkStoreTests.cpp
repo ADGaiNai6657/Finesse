@@ -41,7 +41,7 @@ static auto sameHash(std::string_view) -> Sha1Digest { return {}; }
 static auto testHash() -> void {
     require(sha1Hex(sha1("")) == "da39a3ee5e6b4b0d3255bfef95601890afd80709", "SHA-1 empty KAT");
     require(sha1Hex(sha1("abc")) == "a9993e364706816aba3e25717850c26c9cd0d89d", "SHA-1 abc KAT");
-    const std::string binary("a\0b", 3);
+    constexpr std::string binary("a\0b", 3);
     require(sha1(binary) != sha1("a"), "binary length ignored");
 }
 

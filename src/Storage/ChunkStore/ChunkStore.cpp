@@ -38,6 +38,7 @@ auto makeChunkStore(const ChunkHashFunction hashFunction) -> ChunkStore {
 }
 
 //按唯一 ID 读取池内原文记录
+//通过id获取到对应的chunk,并返回他的引用
 //输入：store：拥有记录的原文池；id：池内 storedId。
 //输出：返回记录的只读引用；ID 越界抛异常，引用在池清空或销毁前有效。
 auto readStoredChunk(const ChunkStore &store, const StoredChunkId id) -> const StoredChunk & {

@@ -33,7 +33,7 @@ struct ChunkStoreStats {
 // hashFunction 的替换只供碰撞测试；实际实验显式使用 sha1。
 struct ChunkStore {
     std::deque<StoredChunk> chunks;
-    std::unordered_multimap<Sha1Digest, StoredChunkId, Sha1DigestHash> index;
+    std::unordered_multimap<Sha1Digest, StoredChunkId, Sha1DigestHash> index;   // <key, value, bucket_number>
     ChunkStoreStats stats;
     ChunkHashFunction hashFunction = sha1;
 };
