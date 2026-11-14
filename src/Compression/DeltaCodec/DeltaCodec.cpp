@@ -30,7 +30,7 @@ auto encodeDelta(const ChunkView base, const ChunkView target) -> std::string {
         throw std::length_error("delta encode output too large");
     }
     std::size_t capacity = std::max<std::size_t>(256, target.length + 256);
-    const std::uint8_t empty = 0;
+    constexpr std::uint8_t empty = 0;
     const auto *targetData = target.length == 0 ? &empty : target.data;
     const auto *baseData = base.length == 0 ? nullptr : base.data;
     // 不指定任何 XD3_SEC_TYPE：无二级压缩。SEC_NOALL 只能配合已选 compressor 使用。
