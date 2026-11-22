@@ -77,7 +77,7 @@ auto restoreEncodedChunk(const EncodedStore &store, const StoredChunkId id) -> s
 //输入：store：待追加编码池；firstChunkId：首次出现 ID；target：原文视图；candidate：可选的此前合格 Raw 候选。
 //输出：返回最终表示并追加一条记录；匹配时 encode 后完整字节回放，仅严格更小才存 Delta，重复应由上层过滤，错误抛异常。
 auto appendEncodedChunk(EncodedStore &store, const ChunkId firstChunkId, const ChunkView target,
-                        const std::optional<Candidate> candidate) -> PayloadKind {
+                        const std::optional<Candidate> &candidate) -> PayloadKind {
     if (target.length != 0 && target.data == nullptr) {
         throw std::invalid_argument("null target with nonzero length");
     }
@@ -103,7 +103,7 @@ auto appendEncodedChunk(EncodedStore &store, const ChunkId firstChunkId, const C
             throw std::runtime_error("Xdelta roundtrip byte equality failed");
         }
         const auto verifyNs = elapsedSince(verifyStart);
-        const bool accepted = delta.size() < bytes.size();
+        const bool accepted = delta.size() < bytes.size();  //只在编码后所消耗的存储空间小于原本的存储空间时接受
         attempt = DeltaAttempt {record.id, *candidate, bytes.size(), delta.size(), accepted, encodeNs, verifyNs};
         if (accepted) {
             record.kind = PayloadKind::Delta;
@@ -135,7 +135,7 @@ auto buildEncodedStore(const ExperimentInput &input, const std::string_view algo
     EncodedStore output;
     output.algorithm = algorithm;
     output.chunks.reserve(input.store.chunks.size());
-    const HashConfig hash;
+    constexpr HashConfig hash;
     const auto parameters = approvedTransformParameters();
     for (const auto &source : input.store.chunks) {
         if (source.id != output.chunks.size()) {

@@ -40,7 +40,7 @@ struct EncodedStore {
 //输入：store：待追加编码池；firstChunkId：首次出现 ID；target：原文视图；candidate：可选的此前合格 Raw 候选。
 //输出：返回最终表示并追加一条记录；匹配时 encode 后完整字节回放，仅严格更小才存 Delta，重复应由上层过滤，错误抛异常。
 auto appendEncodedChunk(EncodedStore &store, ChunkId firstChunkId, ChunkView target,
-                        std::optional<Candidate> candidate) -> PayloadKind;
+                        const std::optional<Candidate> &candidate) -> PayloadKind;
 //按首次出现顺序为指定算法构造独立编码池
 //输入：input：已精确去重的原文池和首次出现映射；algorithm：批准的算法名。
 //输出：返回拥有 Raw/Delta 内容的 EncodedStore，不保留原文视图；只有最终合格 Raw 入候选索引，错误抛异常。
