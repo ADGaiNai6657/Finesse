@@ -1,0 +1,13 @@
+dataset,algorithm,DCR,DCE,DCRchangePercent,DCEchangePercent
+WEB,N-transform SF,7.60,0.8749,,
+WEB,Finesse,7.52,0.8795,-1.05,+0.53
+TAR,N-transform SF,15.00,0.9516,,
+TAR,Finesse,15.34,0.9846,+2.27,+3.47
+RDB,N-transform SF,3.67,0.9129,,
+RDB,Finesse,3.94,0.9448,+7.36,+3.49
+SYN,N-transform SF,1.75,0.9326,,
+SYN,Finesse,1.70,0.9640,-2.86,+3.37
+VMA,N-transform SF,1.56,0.9088,,
+VMA,Finesse,1.51,0.9161,-3.21,+0.80
+VMB,N-transform SF,1.30,0.9093,,
+VMB,Finesse,1.28,0.9193,-1.54,+1.10

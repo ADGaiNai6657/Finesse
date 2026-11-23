@@ -1,0 +1,99 @@
+Start testing: Nov 23 21:24 CST
+----------------------------------------------------------
+1/6 Testing: core
+1/6 Test: core
+Command: "/Users/adgainai6657/CLionProjects/Finesse/build/release/finesse_tests"
+Directory: /Users/adgainai6657/CLionProjects/Finesse/build/release
+"core" start time: Nov 23 21:24 CST
+Output:
+----------------------------------------------------------
+Core checks passed (T-01..T-11 and CDC adaptation).
+<end of output>
+Test time =   1.16 sec
+----------------------------------------------------------
+Test Passed.
+"core" end time: Nov 23 21:24 CST
+"core" time elapsed: 00:00:01
+----------------------------------------------------------
+
+2/6 Testing: chunk_store
+2/6 Test: chunk_store
+Command: "/Users/adgainai6657/CLionProjects/Finesse/build/release/chunk_store_tests"
+Directory: /Users/adgainai6657/CLionProjects/Finesse/build/release
+"chunk_store" start time: Nov 23 21:24 CST
+Output:
+----------------------------------------------------------
+Chunk store: SHA-1 KAT, exact dedup, shared storage, collision, ownership and reset checks passed.
+<end of output>
+Test time =   0.43 sec
+----------------------------------------------------------
+Test Passed.
+"chunk_store" end time: Nov 23 21:24 CST
+"chunk_store" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/6 Testing: delta_store
+3/6 Test: delta_store
+Command: "/Users/adgainai6657/CLionProjects/Finesse/build/release/delta_store_tests"
+Directory: /Users/adgainai6657/CLionProjects/Finesse/build/release
+"delta_store" start time: Nov 23 21:24 CST
+Output:
+----------------------------------------------------------
+Delta codec/store/pipeline tests passed
+<end of output>
+Test time =   0.42 sec
+----------------------------------------------------------
+Test Passed.
+"delta_store" end time: Nov 23 21:24 CST
+"delta_store" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/6 Testing: experiment
+4/6 Test: experiment
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/adgainai6657/CLionProjects/Finesse/tests/ExperimentTests.py" "/Users/adgainai6657/CLionProjects/Finesse/build/release/Finesse"
+Directory: /Users/adgainai6657/CLionProjects/Finesse/build/release
+"experiment" start time: Nov 23 21:24 CST
+Output:
+----------------------------------------------------------
+Experiment checks passed (T-10/T-12, replay, CSV, config, failures).
+<end of output>
+Test time =   0.67 sec
+----------------------------------------------------------
+Test Passed.
+"experiment" end time: Nov 23 21:24 CST
+"experiment" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/6 Testing: delta_experiment
+5/6 Test: delta_experiment
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/adgainai6657/CLionProjects/Finesse/tests/DeltaExperimentTests.py" "/Users/adgainai6657/CLionProjects/Finesse/build/release/Finesse"
+Directory: /Users/adgainai6657/CLionProjects/Finesse/build/release
+"delta_experiment" start time: Nov 23 21:24 CST
+Output:
+----------------------------------------------------------
+Delta CLI/config/replay/audit tests passed
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"delta_experiment" end time: Nov 23 21:24 CST
+"delta_experiment" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/6 Testing: deduplication
+6/6 Test: deduplication
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/adgainai6657/CLionProjects/Finesse/tests/DeduplicationTests.py" "/Users/adgainai6657/CLionProjects/Finesse/build/release/Finesse"
+Directory: /Users/adgainai6657/CLionProjects/Finesse/build/release
+"deduplication" start time: Nov 23 21:24 CST
+Output:
+----------------------------------------------------------
+Dedup CLI checks passed: one copy per content, references restore source chunks, unique/all/replay agree.
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"deduplication" end time: Nov 23 21:24 CST
+"deduplication" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Nov 23 21:24 CST

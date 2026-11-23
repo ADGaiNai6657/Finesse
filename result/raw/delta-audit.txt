@@ -1,0 +1,4 @@
+Verified result/raw/ds1-delta: Finesse-Gear 0 Delta, 179742046 payload bytes, 17486 restored; NTransform-Gear 1 Delta, 179734843 payload bytes, 17486 restored
+Verified result/raw/ds2-delta: Finesse-Gear 12424 Delta, 311066472 payload bytes, 75132 restored; NTransform-Gear 19054 Delta, 258893254 payload bytes, 75132 restored
+Verified result/raw/ds3-delta: Finesse-Gear 8597 Delta, 367021258 payload bytes, 60453 restored; NTransform-Gear 14013 Delta, 306479680 payload bytes, 60453 restored
+Verified result/raw/ds4-delta: Finesse-Gear 140 Delta, 38559669 payload bytes, 24931 restored; NTransform-Gear 297 Delta, 36722694 payload bytes, 24931 restored
