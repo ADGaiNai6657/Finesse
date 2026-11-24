@@ -1,9 +1,9 @@
 <!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Finesse 实验记录</title><body>
 <h1>Finesse 新版统计实验 · 2026-11-24</h1>
 <p>Apple M5 单线程 Release。构建记录的 Git 提交为 47501bc，本次统计改动来自工作区，实际源码由 raw 中的 source-files.csv 和 SHA-256 标识。四组输入共 17,000 个文件、1,734,815,694 字节。每组分别完成 SF 与 Delta 的 Benchmark 和 Profiling，各模式的算法结果逐项复核。</p>
-<p><a href="../raw/source-inputs.tar">本次输入字节归档</a> · <a href="clean/recompute.py">清洗与复核脚本</a> · <a href="clean/formal-rounds.csv">逐轮测速</a> · <a href="paper/FAST19-Finesse.pdf">论文原版 PDF</a> · <a href="SHA256SUMS">本次文件 SHA-256</a> · <a href="../report.html">上次实验报告</a></p>
+<p><a href="../legacy-20261123/raw/source-inputs.tar">本次输入字节归档</a> · <a href="clean/recompute.py">清洗与复核脚本</a> · <a href="clean/formal-rounds.csv">逐轮测速</a> · <a href="paper/FAST19-Finesse.pdf">论文原版 PDF</a> · <a href="SHA256SUMS">本次文件 SHA-256</a> · <a href="../legacy-20261123/report.html">上次实验报告</a></p>
 <p>Finesse-Gear 的 SF 速度为基线的 2.98–3.39 倍。单算法内存管线吞吐为 1.13–1.43 倍。展开源码和未压缩 tar 的 Finesse-Gear DCR 仍低 16.77% 和 16.50%。新旧记录的 SF 输出摘要、最终 Raw/Delta 表示、逐块恢复证据逐项相符。</p>
-<p><a href="clean/trend-comparison.csv">逐组趋势</a> · <a href="clean/reproducibility.csv">结果一致性复核</a></p>
+<p><a href="trend-analysis.html">趋势分析</a> · <a href="clean/trend-comparison.csv">逐组趋势</a> · <a href="clean/reproducibility.csv">结果一致性复核</a></p>
 <h2>表 1　对应子块的局部性</h2>
 <p>每个样本是 NTransform-Gear 实际选中的一个目标块与 Raw 基块对，包含所有匹配尝试。按各自长度等分 12 段，对应位置比较 SHA-1 和 Finesse-Gear 子块最大指纹。两行均值各以候选对数作分母，取值为 0 到 12。第 1 组只有一个样本。</p>
 <table border="1"><thead><tr><th>指标</th><th>DataSet_1</th><th>DataSet_2</th><th>DataSet_3</th><th>DataSet_4</th></tr></thead><tbody><tr><td>候选对数</td><td>1</td><td>19054</td><td>14013</td><td>297</td></tr><tr><td>平均内容相同子块数</td><td>0.000</td><td>1.542</td><td>1.958</td><td>3.370</td></tr><tr><td>平均 feature 相同子块数</td><td>0.000</td><td>8.255</td><td>8.068</td><td>5.855</td></tr></tbody></table>

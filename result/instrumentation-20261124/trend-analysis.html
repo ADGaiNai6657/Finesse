@@ -1,0 +1,24 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Finesse 新版趋势分析</title></head><body>
+<h1>Finesse 新版实验趋势分析 · 2026-11-24</h1>
+<p>部分复现了论文趋势。Finesse-Gear 在四组数据上计算 SF 均快约三倍，单算法内存管线吞吐也全部提高。主要偏差仍是整体 Delta 压缩比，集中于展开源码和未压缩 tar。新版 Benchmark 和 Profiling 的算法输出一致，两种模式的压缩表示与逐块恢复证据也与旧实验一致。</p>
+<p><a href="clean/trend-analysis.csv">趋势复算 CSV</a> · <a href="report.html">完整实验报告</a> · <a href="clean/reproducibility.csv">模式与历史复核</a> · <a href="../legacy-20261123/trend-analysis.html">旧趋势分析</a></p>
+<h2>SF 速度和单算法内存吞吐</h2>
+<table border="1"><thead><tr><th>数据集</th><th>负载</th><th>SF 速度倍数</th><th>管线吞吐增幅</th><th>DCR 相对变化</th></tr></thead><tbody><tr><td>DataSet_1</td><td>5 份 Emacs tar.gz</td><td>3.03×</td><td>+40.1%</td><td>-0.004%</td></tr><tr><td>DataSet_2</td><td>5 版 Emacs 展开源码</td><td>2.98×</td><td>+25.1%</td><td>-16.77%</td></tr><tr><td>DataSet_3</td><td>5 份 Emacs tar</td><td>2.98×</td><td>+43.4%</td><td>-16.50%</td></tr><tr><td>DataSet_4</td><td>8 份 32 MiB 合成备份</td><td>3.39×</td><td>+12.5%</td><td>-4.76%</td></tr></tbody></table>
+<p>四组 SF 速度倍数的等权平均为 3.10×，接近论文图 4 的 3.2×（E5）和 3.5×（i7）。本机各算法均用五轮速度的算术平均计算倍数。单算法内存管线从加载开始计至编码池构建完成，和论文图 5 的 Destor 系统口径不同。本次只有第 3 组达到论文所报 41%–85% 的吞吐增幅区间。</p>
+<p><a href="clean/formal-rounds.csv">80 条正式测速记录</a> · <a href="paper/figure4.png">论文图 4</a> · <a href="paper/figure5.png">论文图 5</a></p>
+<h2>DCR 差额集中在两组的候选覆盖率</h2>
+<p>每格按 Finesse-Gear / NTransform-Gear 排列。匹配覆盖率的分母是去重后的唯一原文字节。已匹配节省率的分母是匹配目标原文字节，没有匹配时显示为不适用。DCR 为唯一原文字节除以最终 Raw 与 Delta 的合计 payload。</p>
+<table border="1"><thead><tr><th>数据集</th><th>DCR</th><th>匹配块数</th><th>匹配覆盖率</th><th>已匹配节省率</th></tr></thead><tbody><tr><td>DataSet_1</td><td>1.00000 / 1.00004</td><td>0 / 1</td><td>0.00% / 0.01%</td><td>— / 66.25%</td></tr><tr><td>DataSet_2</td><td>1.37600 / 1.65330</td><td>12,424 / 19,054</td><td>27.78% / 41.01%</td><td>98.37% / 96.35%</td></tr><tr><td>DataSet_3</td><td>1.28920 / 1.54386</td><td>8,597 / 14,013</td><td>22.77% / 36.67%</td><td>98.52% / 96.06%</td></tr><tr><td>DataSet_4</td><td>1.08125 / 1.13534</td><td>140 / 297</td><td>8.71% / 14.03%</td><td>86.30% / 84.99%</td></tr></tbody></table>
+<p>第 2、3 组中，Finesse 命中的块节省率分别高出 2.02 和 2.46 个百分点，但匹配覆盖率少了 13.23 和 13.90 个百分点，导致两组合计多存 112.7 MB，占四组字节差额的 98.4%。论文六组的 DCR 相对变化为 −3.21% 至 +7.36%。本机第 2、3 组的降幅分别为 16.77% 和 16.50%。论文 DCE 的公式和解释方向存在歧义，本表使用明确的字节节省率。</p>
+<p><a href="clean/table3-compression.csv">本机压缩表</a> · <a href="paper/table3.png">论文表 3</a></p>
+<h2>对应子块局部性弱于论文样本</h2>
+<table border="1"><thead><tr><th>数据集</th><th>候选对数</th><th>平均相同内容子块数</th><th>平均相同特征子块数</th></tr></thead><tbody><tr><td>DataSet_1</td><td>1</td><td>0.00</td><td>0.00</td></tr><tr><td>DataSet_2</td><td>19,054</td><td>1.54</td><td>8.25</td></tr><tr><td>DataSet_3</td><td>14,013</td><td>1.96</td><td>8.07</td></tr><tr><td>DataSet_4</td><td>297</td><td>3.37</td><td>5.86</td></tr></tbody></table>
+<p>第 2–4 组中，特征相同的对应子块均多于内容完全相同的子块，方向与论文一致。本机这三组每对平均保留 5.86–8.25 个相同特征，论文六组均值为 10.04–10.97。第 1 组仅一个候选对。不同负载、Gear/FastCDC 和 Raw 基块资格都可能改变命中，本次对照无法量化这些因素各自的影响。</p>
+<p><a href="clean/table1-locality.csv">本机局部性表</a> · <a href="paper/table1.png">论文表 1</a></p>
+<h2>新版计时下的阶段差异</h2>
+<p>下表是每组 Delta Benchmark 的单次实跑，单位为 ms。CDC 为共享阶段。构建内已包含 SF、索引、编码及即时回放，因此同一列中的子阶段不能与构建相加。逐块恢复和文件摘要在构建结束后执行，不计入五轮单算法吞吐。</p>
+<table border="1"><thead><tr><th>数据集</th><th>CDC</th><th>两算法构建</th><th>两算法 SF</th><th>两算法 Delta 编码</th><th>两算法即时校验</th><th>两算法逐块恢复</th><th>两算法文件摘要累积</th></tr></thead><tbody><tr><td>DataSet_1</td><td>67.43</td><td>188.25 / 355.04</td><td>89.80 / 255.24</td><td>— / 0.08</td><td>— / 0.01</td><td>164.81 / 149.43</td><td>54.37 / 54.66</td></tr><tr><td>DataSet_2</td><td>246.09</td><td>1027.49 / 1610.84</td><td>428.73 / 621.03</td><td>224.76 / 555.10</td><td>45.37 / 82.43</td><td>730.47 / 846.18</td><td>198.65 / 201.08</td></tr><tr><td>DataSet_3</td><td>253.99</td><td>842.32 / 1656.18</td><td>319.15 / 675.03</td><td>197.87 / 585.40</td><td>40.26 / 82.78</td><td>729.72 / 830.63</td><td>200.19 / 201.41</td></tr><tr><td>DataSet_4</td><td>126.24</td><td>74.02 / 184.96</td><td>26.41 / 110.83</td><td>15.20 / 25.95</td><td>2.17 / 3.08</td><td>284.05 / 268.31</td><td>101.99 / 96.43</td></tr></tbody></table>
+<p>第 2 组 NTransform-Gear 的构建比 Finesse-Gear 多用 583.4 ms，其中 SF 多用 192.3 ms，Delta 编码多用 330.3 ms。编码耗时差还包含匹配次数和参与编码的字节量差异。</p>
+<p>第 3 组 NTransform-Gear 的构建比 Finesse-Gear 多用 813.9 ms，其中 SF 多用 355.9 ms，Delta 编码多用 387.5 ms。编码耗时差还包含匹配次数和参与编码的字节量差异。</p>
+<p><a href="clean/stage-timing.csv">新版阶段表</a> · <a href="clean/delta-encoding.csv">编码延迟分布</a> · <a href="clean/resources.csv">资源记录</a> · <a href="clean/recovery.csv">整文件恢复核验</a></p>
+</body></html>

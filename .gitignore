@@ -2,7 +2,7 @@
 /cmake-build-*/
 /results/
 /tmp/
-/result/raw/source-inputs.tar
+/result/legacy-20261123/raw/source-inputs.tar
 /.idea/
 .DS_Store
 __pycache__/

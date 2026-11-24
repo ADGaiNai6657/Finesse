@@ -39,12 +39,12 @@ def fmt(x,n=4):return f'{float(x):.{n}f}' if x!='' else '—'
 heading(1,'Finesse 新版统计实验 · 2026-11-24')
 config=json.loads((root/'raw/ds1-delta-benchmark/experiment_config.json').read_text())
 p(f"Apple M5 单线程 Release。构建记录的 Git 提交为 {config['git_commit'][:7]}，本次统计改动来自工作区，实际源码由 raw 中的 source-files.csv 和 SHA-256 标识。四组输入共 17,000 个文件、1,734,815,694 字节。每组分别完成 SF 与 Delta 的 Benchmark 和 Profiling，各模式的算法结果逐项复核。")
-links([('本次输入字节归档','../raw/source-inputs.tar'),('清洗与复核脚本','clean/recompute.py'),('逐轮测速','clean/formal-rounds.csv'),('论文原版 PDF','paper/FAST19-Finesse.pdf'),('本次文件 SHA-256','SHA256SUMS'),('上次实验报告','../report.html')])
+links([('本次输入字节归档','../legacy-20261123/raw/source-inputs.tar'),('清洗与复核脚本','clean/recompute.py'),('逐轮测速','clean/formal-rounds.csv'),('论文原版 PDF','paper/FAST19-Finesse.pdf'),('本次文件 SHA-256','SHA256SUMS'),('上次实验报告','../legacy-20261123/report.html')])
 trend=read('trend-comparison.csv')
 sf_ratios=[float(r['sf_speedup']) for r in trend]
 system_ratios=[float(r['pipeline_speedup']) for r in trend]
 p(f"Finesse-Gear 的 SF 速度为基线的 {min(sf_ratios):.2f}–{max(sf_ratios):.2f} 倍。单算法内存管线吞吐为 {min(system_ratios):.2f}–{max(system_ratios):.2f} 倍。展开源码和未压缩 tar 的 Finesse-Gear DCR 仍低 16.77% 和 16.50%。新旧记录的 SF 输出摘要、最终 Raw/Delta 表示、逐块恢复证据逐项相符。")
-links([('逐组趋势','clean/trend-comparison.csv'),('结果一致性复核','clean/reproducibility.csv')])
+links([('趋势分析','trend-analysis.html'),('逐组趋势','clean/trend-comparison.csv'),('结果一致性复核','clean/reproducibility.csv')])
 heading(2,'表 1　对应子块的局部性')
 p('每个样本是 NTransform-Gear 实际选中的一个目标块与 Raw 基块对，包含所有匹配尝试。按各自长度等分 12 段，对应位置比较 SHA-1 和 Finesse-Gear 子块最大指纹。两行均值各以候选对数作分母，取值为 0 到 12。第 1 组只有一个样本。')
 table(['指标']+[r['dataset'] for r in L],[[label]+[fmt(r[k],3) if k.startswith('mean') else r[k] for r in L] for label,k in [('候选对数','candidatePairs'),('平均内容相同子块数','meanIdentical'),('平均 feature 相同子块数','meanEqualFeature')]])

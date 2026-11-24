@@ -26,7 +26,7 @@ def main():
     expected = source_inventory(root)
     file_count = len(expected)
     byte_count = sum(length for length, _ in expected.values())
-    with tarfile.open(root.parent / "raw/source-inputs.tar", "r:") as archive:
+    with tarfile.open(root.parent / "legacy-20261123/raw/source-inputs.tar", "r:") as archive:
         for member in archive:
             assert member.isfile(), member.name
             length, digest = expected.pop(member.name)

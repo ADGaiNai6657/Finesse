@@ -2,11 +2,11 @@
 
 Apple M5 单线程 Release。构建记录的 Git 提交为 47501bc，本次统计改动来自工作区，实际源码由 raw 中的 source-files.csv 和 SHA-256 标识。四组输入共 17,000 个文件、1,734,815,694 字节。每组分别完成 SF 与 Delta 的 Benchmark 和 Profiling，各模式的算法结果逐项复核。
 
-[本次输入字节归档](../raw/source-inputs.tar) · [清洗与复核脚本](clean/recompute.py) · [逐轮测速](clean/formal-rounds.csv) · [论文原版 PDF](paper/FAST19-Finesse.pdf) · [本次文件 SHA-256](SHA256SUMS) · [上次实验报告](../report.html)
+[本次输入字节归档](../legacy-20261123/raw/source-inputs.tar) · [清洗与复核脚本](clean/recompute.py) · [逐轮测速](clean/formal-rounds.csv) · [论文原版 PDF](paper/FAST19-Finesse.pdf) · [本次文件 SHA-256](SHA256SUMS) · [上次实验报告](../legacy-20261123/report.html)
 
 Finesse-Gear 的 SF 速度为基线的 2.98–3.39 倍。单算法内存管线吞吐为 1.13–1.43 倍。展开源码和未压缩 tar 的 Finesse-Gear DCR 仍低 16.77% 和 16.50%。新旧记录的 SF 输出摘要、最终 Raw/Delta 表示、逐块恢复证据逐项相符。
 
-[逐组趋势](clean/trend-comparison.csv) · [结果一致性复核](clean/reproducibility.csv)
+[趋势分析](trend-analysis.html) · [逐组趋势](clean/trend-comparison.csv) · [结果一致性复核](clean/reproducibility.csv)
 
 ## 表 1　对应子块的局部性
 

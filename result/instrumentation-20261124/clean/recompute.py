@@ -103,7 +103,7 @@ for dataset in range(1, 5):
             if kind == "sf":
                 deterministic = [(r["algorithm"], r["repetition"], r["order"], r["outputDigest"])
                                  for r in read(path / "measurements.csv")]
-                old = root.parent / "raw" / f"ds{dataset}-sf" / "measurements.csv"
+                old = root.parent / "legacy-20261123" / "raw" / f"ds{dataset}-sf" / "measurements.csv"
                 if old.exists():
                     assert deterministic == [(r["algorithm"], r["repetition"], r["order"], r["outputDigest"])
                                              for r in read(old)]
@@ -112,7 +112,7 @@ for dataset in range(1, 5):
                 restored = (path / "restoration-verification.csv").read_bytes()
                 files = read(path / "file-restoration.csv")
                 deterministic = (encoded, restored, files)
-                old = root.parent / "raw" / f"ds{dataset}-delta"
+                old = root.parent / "legacy-20261123" / "raw" / f"ds{dataset}-delta"
                 if old.exists():
                     assert encoded == (old / "encoded-chunks.csv").read_bytes()
                     assert restored == (old / "restoration-verification.csv").read_bytes()
