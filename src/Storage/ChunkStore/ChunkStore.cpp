@@ -1,4 +1,5 @@
 #include "ChunkStore.h"
+#include "Instrumentation/Metrics.h"
 
 #include <limits>
 #include <stdexcept>
@@ -91,8 +92,13 @@ auto storeChunk(ChunkStore &store, const ChunkView chunk) -> ChunkStoreResult {
         throw std::invalid_argument("null chunk hash function");
     }
     const auto content = contentView(chunk);
+    metrics::Timer fingerprint("fingerprint", chunk.length);
     const auto hash = store.hashFunction(content);
+    fingerprint.finish();
+    metrics::Timer lookup("sha1_lookup", chunk.length);
     const auto existing = findInBucket(store, hash, content);
+    lookup.finish(existing ? "hit" : "miss");
+    metrics::count(existing ? "sha1_hit" : "sha1_miss");
     auto next = store.stats;
     next.totalChunks = addCount(next.totalChunks, 1);
     next.totalBytes = addCount(next.totalBytes, chunk.length);
@@ -109,9 +115,13 @@ auto storeChunk(ChunkStore &store, const ChunkView chunk) -> ChunkStoreResult {
     next.uniqueBytes = addCount(next.uniqueBytes, chunk.length);
     const auto id = static_cast<StoredChunkId>(store.chunks.size());
     // 只在确认为新内容后复制 payload；重复出现只返回同一 storedId。
+    metrics::Timer storage("unique_payload_write", chunk.length);
     store.chunks.push_back({id, hash, std::string(content), 1});
+    storage.finish("ok", chunk.length);
     try {
+        const metrics::Timer insert("sha1_insert");
         store.index.emplace(hash, id);
+        metrics::count("sha1_insert");
     } catch (...) {
         store.chunks.pop_back();
         throw;

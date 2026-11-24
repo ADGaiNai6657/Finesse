@@ -1,0 +1,17 @@
+dataset,entry,mode,algorithm,verified_files,verified_occurrences,verified_bytes
+DataSet_1,delta,benchmark,Finesse-Gear,5,17486,179761540
+DataSet_1,delta,benchmark,NTransform-Gear,5,17486,179761540
+DataSet_1,delta,profiling,Finesse-Gear,5,17486,179761540
+DataSet_1,delta,profiling,NTransform-Gear,5,17486,179761540
+DataSet_2,delta,benchmark,Finesse-Gear,16982,75132,636563018
+DataSet_2,delta,benchmark,NTransform-Gear,16982,75132,636563018
+DataSet_2,delta,profiling,Finesse-Gear,16982,75132,636563018
+DataSet_2,delta,profiling,NTransform-Gear,16982,75132,636563018
+DataSet_3,delta,benchmark,Finesse-Gear,5,60453,650055680
+DataSet_3,delta,benchmark,NTransform-Gear,5,60453,650055680
+DataSet_3,delta,profiling,Finesse-Gear,5,60453,650055680
+DataSet_3,delta,profiling,NTransform-Gear,5,60453,650055680
+DataSet_4,delta,benchmark,Finesse-Gear,8,24931,268435456
+DataSet_4,delta,benchmark,NTransform-Gear,8,24931,268435456
+DataSet_4,delta,profiling,Finesse-Gear,8,24931,268435456
+DataSet_4,delta,profiling,NTransform-Gear,8,24931,268435456

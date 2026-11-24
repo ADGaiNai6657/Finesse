@@ -121,3 +121,7 @@ T-15/T-16 由 DeltaStoreTests.cpp 执行，T-17 由 DeltaExperimentTests.py 和 
 输入来源、CDC、SHA-1/去重时间另记。buildNs 包含签名/索引/目标摘要/真实编码/即时逐字节验证/分配；encodeNs 与 roundtripVerifyNs 是其中子区间。restorationSweepNs 另含全部出现恢复/完整性检查/验证行内存构造，不含 CSV 写盘；这些单次观察不能称为稳定系统吞吐。
 
 finalPayloadBytes 含全部唯一块的最终 Raw＋Delta；短块、无匹配和回退均计入。所有 attempted 指标含无收益尝试，accepted 仅含保留 Delta，stored 覆盖全集；按字节和计算，零分母为空并说明。构造输入原文池与最终各算法编码 payload 分开列，不将元数据/索引/临时缓冲计为 payload，也不声称已测总内存/完整磁盘存储量。空输入可以完成零块存储验证，不能输出性能结论。
+
+## 通用统计
+
+两入口的统一时间边界、Benchmark/Profiling 模式及 schema 1 输出见 [18](18-experiment-instrumentation.md)。首期纳秒字段沿用原始单位。Profiling 的轮次包含逐块采集成本。

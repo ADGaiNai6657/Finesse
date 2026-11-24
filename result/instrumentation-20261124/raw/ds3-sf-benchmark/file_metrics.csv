@@ -1,0 +1,6 @@
+experiment_id,file_id,path,extension,bytes,sha256,chunks,unique_first_seen,duplicates
+ds3-sf-benchmark-1795512485684512-56634,0,../../../../../FastCDC/Dataset/DataSet_3/emacs-21.4a.tar,.tar,76359680,a6150b127d8950d23ffe3f9c3b2651f559fe2a5c830331102ce75f78797b9fd6,7024,7010,14
+ds3-sf-benchmark-1795512485684512-56634,1,../../../../../FastCDC/Dataset/DataSet_3/emacs-22.1.tar,.tar,138557440,ff2557b6925f68f2fbcefd4e2b6017fcc364ec567b3b5e90a5df13af84a8cffe,12852,12184,668
+ds3-sf-benchmark-1795512485684512-56634,2,../../../../../FastCDC/Dataset/DataSet_3/emacs-22.2.tar,.tar,140462080,0ee44babb07d0bf930fdc75425e738d1d6ee2beb1ddcaa1e692476ed0cd4b8e3,13055,5475,7580
+ds3-sf-benchmark-1795512485684512-56634,3,../../../../../FastCDC/Dataset/DataSet_3/emacs-22.3.tar,.tar,141762560,706d9cc55437f0dbdd28513b8ef7f0e41f6fc3a87380c9be9232655b36873e77,13189,4788,8401
+ds3-sf-benchmark-1795512485684512-56634,4,../../../../../FastCDC/Dataset/DataSet_3/emacs-23.1.tar,.tar,152913920,1607caac8bdba8bfd6af17f2dfd1b828e8c2e4ecc014fa446607c1b15c6bb4bb,14333,10937,3396

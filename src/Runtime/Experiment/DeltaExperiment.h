@@ -16,4 +16,4 @@ auto loadDeltaExperimentConfig(const std::filesystem::path &path) -> DeltaExperi
 //构造两算法编码池并在释放原文后验证全部出现
 //输入：config：已批准的单次 Delta 配置及输入配置。
 //输出：无返回值；导出真实编码、候选尝试、恢复证据和质量统计，不执行 SF 五轮；失败记 failed 并抛异常，拒绝覆盖。
-auto runDeltaExperiment(const DeltaExperimentConfig &config) -> void;
+auto runDeltaExperiment(const DeltaExperimentConfig &config, metrics::Mode mode = metrics::Mode::Benchmark) -> void;

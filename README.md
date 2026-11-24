@@ -109,3 +109,7 @@ python3 scripts/verify_delta_results.py results/fastcdc-dataset-1-delta-release-
 新增 `encoded-chunks.csv`、`delta-attempts.csv`、`occurrences.csv`、`restoration-verification.csv` 与 `compression-summary.csv`。DCR 为全部唯一原文字节 / 最终 Raw＋Delta payload，包含短块、未匹配及回退 Raw；尝试/接受/实际存储的 residual/saving 分列。`deduplication.csv` 描述构造输入原文池，最终编码大小看 compression-summary。CSV 是元信息，payload 在进程内存，退出后释放；不能据此跨进程重载。
 
 完整规格与配置见 [15](docs/15-xdelta-pipeline-proposal.md)，实测与验证见 [16](docs/16-delta-validation.md)。每组每算法构造/核验一次，不作为五轮系统吞吐结论；现有 SF 五轮入口保持独立。
+
+## 统一实验计时与导出
+
+两种实验入口均可追加 `--instrumentation off|benchmark|profiling`，默认 Benchmark。使用新的结果目录。新增输出包含阶段、文件、操作、索引、逻辑存储、恢复和进程资源数据。Delta 在原文池释放后复用恢复字节验证完整源文件 SHA-256。字段、阶段边界、开销对照和接入示例见 [统计框架说明](docs/18-experiment-instrumentation.md)。

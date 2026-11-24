@@ -1,0 +1,2 @@
+inputChunks,inputBytes,uniqueChunks,uniqueBytes,duplicateChunks,duplicateBytes,storedPayloadBytes,dedupRatio,dedupSavingRatio,dedupElapsedNs,scope
+24931,268435456,3624,41692808,21307,226742648,41692808,6.4384115361095375,0.84468218684196472,124277003,process-memory-payload

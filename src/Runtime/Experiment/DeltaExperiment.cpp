@@ -4,7 +4,9 @@
 #include "DeltaCodec/DeltaCodec.h"
 #include "EncodedStore/EncodedStore.h"
 #include "IO.h"
+#include "Instrumentation/Run.h"
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <ctime>
@@ -98,15 +100,85 @@ static auto timestamp() -> std::string {
     return out.str();
 }
 
+// 只对按出现顺序完整覆盖源文件的清单做整文件校验。
+// manifest 允许间隔、重叠或重排，这些文件仍执行逐块校验。
+static auto completeFiles(const std::vector<SourceFile> &files, const std::vector<InputChunk> &occurrences)
+    -> std::vector<bool> {
+    std::vector<std::uint64_t> offsets(files.size());
+    std::vector<bool> complete(files.size(), true);
+    for (const auto &chunk : occurrences) {
+        auto &offset = offsets.at(chunk.fileIndex);
+        if (offset != chunk.offset) complete[chunk.fileIndex] = false;
+        offset = chunk.offset + chunk.length;
+    }
+    for (std::size_t id = 0; id < files.size(); ++id) {
+        complete[id] = complete[id] && offsets[id] == files[id].length;
+    }
+    return complete;
+}
+
+// 复用现有的恢复字节更新流式摘要。跨文件交错的 manifest 也无需改变恢复顺序。
+class FileRecovery {
+public:
+    // 为每个源文件维护摘要状态，按需创建 OpenSSL 上下文。
+    FileRecovery(const std::vector<SourceFile> &files, const std::vector<bool> &complete,
+                 const std::string_view algorithm, metrics::Run &run)
+        : files(files), complete(complete), algorithm(algorithm), run(run), states(files.size()) {}
+
+    // 只为覆盖完整的文件累计恢复字节和长度。
+    void update(const InputChunk &occurrence, const std::string_view bytes, std::int64_t &fileDigestNs) {
+        const auto id = occurrence.fileIndex;
+        if (!complete.at(id)) return;
+        const metrics::Timer reassembly("file_reassembly", bytes.size(), false, &fileDigestNs);
+        auto &state = states.at(id);
+        if (!state.hash) state.hash.emplace();
+        const metrics::Timer digest("file_sha256_update", bytes.size());
+        state.hash->update(bytes);
+        state.bytes = checkedAdd(state.bytes, bytes.size());
+    }
+
+    // 核对源长度和摘要，输出明确的通过、失败或不适用状态。
+    void finish() {
+        for (std::size_t id = 0; id < files.size(); ++id) {
+            const auto &source = files[id];
+            if (!complete[id]) {
+                run.recordRecovery(algorithm, id, 0, source.digest, "", false);
+                continue;
+            }
+            const metrics::Scope scope(id);
+            metrics::Timer verify("file_sha256_verify");
+            auto &state = states[id];
+            const auto actual = state.hash ? state.hash->finish() : sha256("");
+            const bool ok = actual == source.digest && state.bytes == source.length;
+            run.recordRecovery(algorithm, id, state.bytes, source.digest, actual, ok);
+            verify.finish(ok ? "ok" : "failed");
+            if (!ok) throw std::runtime_error("restored file SHA-256/length mismatch: " + source.path.string());
+        }
+    }
+
+private:
+    // 只保存增量摘要状态和已恢复的字节数。
+    struct FileDigest {
+        std::optional<Sha256Stream> hash;
+        std::uint64_t bytes = 0;
+    };
+    const std::vector<SourceFile> &files;
+    const std::vector<bool> &complete;
+    std::string_view algorithm;
+    metrics::Run &run;
+    std::vector<FileDigest> states;
+};
+
 //构造两算法编码池并在释放原文后验证全部出现
 //输入：config：已批准的单次 Delta 配置及输入配置。
 //输出：无返回值；导出真实编码、候选尝试、恢复证据和质量统计，不执行 SF 五轮；失败记 failed 并抛异常，拒绝覆盖。
-auto runDeltaExperiment(const DeltaExperimentConfig &config) -> void {
+auto runDeltaExperiment(const DeltaExperimentConfig &config, const metrics::Mode mode) -> void {
     const auto &directory = config.outputDirectory;
     std::filesystem::create_directories(directory.parent_path());
     if (!std::filesystem::create_directory(directory)) {
         throw std::runtime_error("result directory already exists: " + directory.string());
     }
+    metrics::Run metricsRun(mode, directory, "delta", config.values, config.inputConfig.values);
     std::string metadata = "timestamp=" + timestamp() + "\napprovals=D-22,D-23,D-24\n";
     try {
         for (const auto &[key, value] : config.values) {
@@ -142,9 +214,11 @@ auto runDeltaExperiment(const DeltaExperimentConfig &config) -> void {
         writeFile(directory / "parameters.csv", experimentParameterCsv());
         std::array<EncodedStore, 2> stores;
         std::vector<InputChunk> occurrences;
+        std::vector<SourceFile> sourceFiles;
         ChunkStoreStats inputStats;
         {
             auto input = loadExperimentInput(config.inputConfig);
+            metricsRun.captureInput(input);
             auto exportConfig = config.inputConfig;
             exportConfig.outputDirectory = directory;
             exportExperimentInput(exportConfig, input);
@@ -155,6 +229,7 @@ auto runDeltaExperiment(const DeltaExperimentConfig &config) -> void {
             stores[0] = buildEncodedStore(input, "Finesse-Gear");
             stores[1] = buildEncodedStore(input, "NTransform-Gear");
             occurrences = std::move(input.chunks);
+            sourceFiles = std::move(input.files);
         } // 原始 ChunkStore 和所有原文缓冲在此析构。之后恢复只访问 stores。
         metadata += "sourcePoolReleasedBeforeRestoration=true\nsourceFilesReadDuringRestoration=false\n"
             "deltaRetainsOriginalPayload=false\n";
@@ -171,7 +246,18 @@ auto runDeltaExperiment(const DeltaExperimentConfig &config) -> void {
             "attemptedOriginalBytes", "attemptedDeltaBytes", "acceptedOriginalBytes", "acceptedDeltaBytes", "dcr", "storedResidualRatio", "storedSavingRatio",
             "attemptedResidualRatio", "attemptedSavingRatio", "acceptedResidualRatio", "acceptedSavingRatio", "maxDeltaDepth", "verifiedOccurrences", "verifiedBytes",
             "buildNs", "encodeNs", "roundtripVerifyNs", "restorationSweepNs", "pipelineRuns"}};
-        for (const auto &store : stores) {
+        // 先从出现映射判定能否完整恢复，保持原有恢复顺序。
+        const auto fileCoverage = completeFiles(sourceFiles, occurrences);
+        if (config.inputConfig.values.at("inputMode") == "raw"
+            && std::find(fileCoverage.begin(), fileCoverage.end(), false) != fileCoverage.end()) {
+            throw std::runtime_error("raw source coverage is incomplete");
+        }
+        for (std::size_t which = 0; which < stores.size(); ++which) {
+            const auto &store = stores[which];
+            const std::string_view algorithm = which == 0 ? "Finesse-Gear" : "NTransform-Gear";
+            const metrics::Scope scope(algorithm, "recovery");
+            metricsRun.captureStorage(store);
+            FileRecovery files(sourceFiles, fileCoverage, algorithm, metricsRun);
             std::uint64_t payload = 0, rawCount = 0, deltaCount = 0;
             std::uint64_t attemptedOriginal = 0, attemptedDelta = 0, acceptedOriginal = 0, acceptedDelta = 0;
             std::uint64_t encodeNs = 0, roundtripNs = 0, verifiedBytes = 0;
@@ -196,17 +282,26 @@ auto runDeltaExperiment(const DeltaExperimentConfig &config) -> void {
                     std::to_string(attempt.originalBytes), std::to_string(attempt.deltaBytes), attempt.accepted ? "true" : "false",
                     attempt.accepted ? "strictly-smaller" : "no-payload-gain", std::to_string(attempt.encodeNs), std::to_string(attempt.verifyNs)});
             }
+            std::int64_t fileDigestNs = 0;
             const auto verifyStart = std::chrono::steady_clock::now();
             for (const auto &occurrence : occurrences) {
+                const metrics::Scope chunk(occurrence.fileIndex, occurrence.id);
+                metrics::Timer recovery("chunk_recovery", occurrence.length);
+                // 先完成原有块级恢复，再将同一份字节交给文件摘要。
                 const auto bytes = restoreEncodedChunk(store, occurrence.storedId);
                 if (bytes.size() != occurrence.length) {
                     throw std::runtime_error("occurrence restored length mismatch");
                 }
+
                 verifiedBytes = checkedAdd(verifiedBytes, bytes.size());
                 verification.push_back({store.algorithm, std::to_string(occurrence.id), std::to_string(occurrence.storedId),
                     std::to_string(bytes.size()), sha256(bytes), "ok"});
+                recovery.finish();
+                // 旧 sweep 口径只涵盖逐块恢复与审计行，整文件摘要单独计入新阶段。
+                files.update(occurrence, bytes, fileDigestNs);
             }
-            const auto verificationNs = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - verifyStart).count();
+            const auto verificationNs = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - verifyStart).count() - fileDigestNs;
+            files.finish();
             if (verifiedBytes != inputStats.totalBytes || payload > inputStats.uniqueBytes || store.chunks.size() != inputStats.uniqueChunks) {
                 throw std::runtime_error("encoded store totals failed");
             }
@@ -236,12 +331,20 @@ auto runDeltaExperiment(const DeltaExperimentConfig &config) -> void {
         for (const auto name : {"manifest.csv", "checksums.csv", "source-checksums.csv", "encoded-chunks.csv", "delta-attempts.csv", "occurrences.csv", "restoration-verification.csv", "compression-summary.csv"}) {
             metadata += std::string(name) + ".sha256=" + sha256(readFile(directory / name)) + "\n";
         }
+        // 把整文件证据纳入原有产物摘要链。
+        metadata += "fileVerificationPolicy=ordered-complete-source-ranges\n";
+        if (metricsRun.exportRecoveryEvidence()) {
+            metadata += "file-restoration.csv.sha256=" + sha256(readFile(directory / "file-restoration.csv")) + "\n";
+        }
+        metricsRun.finish(true);
         writeFile(directory / "run.txt", "status=ok\nrestorationStatus=ok\n" + metadata);
     } catch (const std::exception &error) {
         std::error_code ignored;
         std::filesystem::remove(directory / "compression-summary.csv", ignored);
         try {
             writeFile(directory / "run.txt", "status=failed\nreason=" + std::string(error.what()) + "\n" + metadata);
+            metricsRun.exportRecoveryEvidence();
+            metricsRun.finish(false, error.what());
         } catch (...) {
             // 保留原异常，不将失败伪装成 Raw 回退。
         }

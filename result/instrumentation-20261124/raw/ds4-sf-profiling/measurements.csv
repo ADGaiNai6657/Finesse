@@ -1,0 +1,11 @@
+runId,algorithm,profileId,repetition,order,inputBytes,processedBytes,excludedBytes,chunkCount,excludedChunks,elapsedNs,outputDigest,status,sfInput,sfInputBytes,sfInputChunks,sfExcludedBytes,sfExcludedChunks
+ds4-sf-profiling,Finesse-Gear,finesse-gear-v1,1,1,268435456,41692808,0,24931,0,26440875,66ff8bbc6f0d254b75b763692e616c43c81f464e916b7cd5821a61ee0e74a6b3,ok,unique,41692808,3624,0,0
+ds4-sf-profiling,NTransform-Gear,finesse-gear-v1,1,2,268435456,41692808,0,24931,0,80444750,aaf7821f59cc13963ac76c0f2da784cbde3bbde9d399175ae5280f0874c3ae90,ok,unique,41692808,3624,0,0
+ds4-sf-profiling,NTransform-Gear,finesse-gear-v1,2,1,268435456,41692808,0,24931,0,89472834,aaf7821f59cc13963ac76c0f2da784cbde3bbde9d399175ae5280f0874c3ae90,ok,unique,41692808,3624,0,0
+ds4-sf-profiling,Finesse-Gear,finesse-gear-v1,2,2,268435456,41692808,0,24931,0,27149791,66ff8bbc6f0d254b75b763692e616c43c81f464e916b7cd5821a61ee0e74a6b3,ok,unique,41692808,3624,0,0
+ds4-sf-profiling,Finesse-Gear,finesse-gear-v1,3,1,268435456,41692808,0,24931,0,26302334,66ff8bbc6f0d254b75b763692e616c43c81f464e916b7cd5821a61ee0e74a6b3,ok,unique,41692808,3624,0,0
+ds4-sf-profiling,NTransform-Gear,finesse-gear-v1,3,2,268435456,41692808,0,24931,0,71708458,aaf7821f59cc13963ac76c0f2da784cbde3bbde9d399175ae5280f0874c3ae90,ok,unique,41692808,3624,0,0
+ds4-sf-profiling,NTransform-Gear,finesse-gear-v1,4,1,268435456,41692808,0,24931,0,70199584,aaf7821f59cc13963ac76c0f2da784cbde3bbde9d399175ae5280f0874c3ae90,ok,unique,41692808,3624,0,0
+ds4-sf-profiling,Finesse-Gear,finesse-gear-v1,4,2,268435456,41692808,0,24931,0,24562542,66ff8bbc6f0d254b75b763692e616c43c81f464e916b7cd5821a61ee0e74a6b3,ok,unique,41692808,3624,0,0
+ds4-sf-profiling,Finesse-Gear,finesse-gear-v1,5,1,268435456,41692808,0,24931,0,23983417,66ff8bbc6f0d254b75b763692e616c43c81f464e916b7cd5821a61ee0e74a6b3,ok,unique,41692808,3624,0,0
+ds4-sf-profiling,NTransform-Gear,finesse-gear-v1,5,2,268435456,41692808,0,24931,0,68489750,aaf7821f59cc13963ac76c0f2da784cbde3bbde9d399175ae5280f0874c3ae90,ok,unique,41692808,3624,0,0

@@ -87,9 +87,15 @@ static auto loadSource(ExperimentInput &input, const std::filesystem::path &path
     if (const auto found = indices.find(canonical); found != indices.end()) {
         return found->second;
     }
-    auto bytes = readFile(canonical);
-    const auto digest = sha256(bytes);
     const auto index = input.files.size();
+    const metrics::Scope file(index);
+    // 读取和源 SHA-256 各有边界，便于区分 I/O 与散列成本。
+    metrics::Timer read("file_read");
+    auto bytes = readFile(canonical);
+    read.finish("ok", bytes.size());
+    metrics::Timer hash("source_sha256", bytes.size());
+    const auto digest = sha256(bytes);
+    hash.finish();
     input.files.push_back({canonical, bytes.size(), digest});
     buffers.push_back(std::move(bytes));
     indices.emplace(canonical, index);
@@ -102,10 +108,11 @@ static auto loadSource(ExperimentInput &input, const std::filesystem::path &path
 static auto bindChunk(ExperimentInput &input, InputChunk chunk, const std::string &bytes) -> void {
     const ChunkView view {reinterpret_cast<const std::uint8_t *>(bytes.data() + chunk.offset),
                           static_cast<std::size_t>(chunk.length)};
-    const auto start = std::chrono::steady_clock::now();
+    const metrics::Scope occurrence(chunk.fileIndex, chunk.id);
+    // 使用同一个区间更新统一阶段和历史纳秒总数。
+    metrics::Timer timer("dedup_total", chunk.length, false, &input.dedupElapsedNs);
     const auto stored = storeChunk(input.store, view);
-    input.dedupElapsedNs += std::chrono::duration_cast<std::chrono::nanoseconds>(
-        std::chrono::steady_clock::now() - start).count();
+    timer.finish(stored.isDuplicate ? "duplicate" : "unique");
     chunk.storedId = stored.storedId;
     chunk.isDuplicate = stored.isDuplicate;
     if (!stored.isDuplicate) {
@@ -118,6 +125,8 @@ static auto bindChunk(ExperimentInput &input, InputChunk chunk, const std::strin
 //输入：config：已检查的输入模式、路径和 CDC 配置。
 //输出：返回来源元信息、全部出现、唯一原文池和计数；源缓冲在返回前释放，I/O、范围、摘要或计数错误抛异常。
 auto loadExperimentInput(const ExperimentConfig &config) -> ExperimentInput {
+    const metrics::Scope scope("shared", "input");
+    const metrics::Timer loading("input_load");
     ExperimentInput input;
     std::map<std::filesystem::path, std::size_t> indices;
     // 仅加载阶段持有源文件缓冲；返回的 ExperimentInput 只保留唯一 payload。
@@ -145,11 +154,18 @@ auto loadExperimentInput(const ExperimentConfig &config) -> ExperimentInput {
         std::sort(paths.begin(), paths.end());
         const auto cdc = makeFastCDCConfig(8192, 2048, 0);
         for (const auto &path : paths) {
+            const metrics::Scope file(input.files.size());
+            const metrics::Timer fileTimer("file_processing");
             const auto index = loadSource(input, path, indices, buffers);
-            const auto start = std::chrono::steady_clock::now();
-            const auto cuts = chunkBoundaries(buffers[index], cdc);
-            input.cdcElapsedNs += std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::steady_clock::now() - start).count();
+            // CDC 只计产生边界的调用，随后逐块绑定唯一池。
+            const auto cuts = [&] {
+                const metrics::Scope fastcdc("FastCDC", "input");
+                metrics::Timer timer("cdc_total", buffers[index].size(), true, &input.cdcElapsedNs);
+                auto boundaries = chunkBoundaries(buffers[index], cdc);
+                timer.finish("ok", buffers[index].size());
+                metrics::count("boundaries", boundaries.size());
+                return boundaries;
+            }();
             std::size_t previous = 0;
             for (const auto cut : cuts) {
                 bindChunk(input, {static_cast<ChunkId>(input.chunks.size()), index, previous, cut - previous}, buffers[index]);
@@ -219,6 +235,7 @@ auto loadExperimentInput(const ExperimentConfig &config) -> ExperimentInput {
         || input.store.stats.uniqueChunks != input.uniqueChunkPositions.size()) {
         throw std::runtime_error("chunk store and input accounting differ");
     }
+    if (metrics::active()) metrics::count("sha1_index_entries", input.store.index.size());
     return input;
 }
 

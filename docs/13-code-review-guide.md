@@ -399,3 +399,7 @@ ctest --test-dir build/release --output-on-failure
 - [ ] 我确认重复出现没有触发新的编码，原文池销毁后仍恢复全部出现。
 - [ ] 我能独立重算 attempted/accepted/stored 指标，并区分两类候选索引。
 - [ ] 我确认没有把进程内恢复说成磁盘持久化、400MB LRU 或稳定系统吞吐复现。
+
+## 统一计时与结果导出
+
+从 `Instrumentation/Metrics.h` 查看作用域与计时契约，沿 `Input.cpp`、`EncodedStore.cpp` 和两实验入口查看采集位置，再到 `Instrumentation/Run.cpp` 对照导出实现。时长重叠、单位与字段见 [18](18-experiment-instrumentation.md)。整文件恢复校验见 `DeltaExperiment.cpp` 的 `FileRecovery`。

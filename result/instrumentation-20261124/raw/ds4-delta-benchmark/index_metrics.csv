@@ -1,0 +1,4 @@
+experiment_id,algorithm,phase,index_type,queries,hits,misses,insert_calls,final_entries,query_us,insert_us,initialize_us
+ds4-delta-benchmark-1795512516072826-56696,Finesse-Gear,build,super_feature,3624,140,3484,3484,10452,841.861,821.393999999991,0.375
+ds4-delta-benchmark-1795512516072826-56696,NTransform-Gear,build,super_feature,3624,297,3327,3327,9981,1474.198,1243.986,0.084
+ds4-delta-benchmark-1795512516072826-56696,shared,input,sha1,24931,21307,3624,3624,3624,16005.4149999999,399.547000000004,

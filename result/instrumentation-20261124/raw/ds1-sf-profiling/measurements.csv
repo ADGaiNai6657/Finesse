@@ -1,0 +1,11 @@
+runId,algorithm,profileId,repetition,order,inputBytes,processedBytes,excludedBytes,chunkCount,excludedChunks,elapsedNs,outputDigest,status,sfInput,sfInputBytes,sfInputChunks,sfExcludedBytes,sfExcludedChunks
+ds1-sf-profiling,Finesse-Gear,finesse-gear-v1,1,1,179761540,179742046,0,17486,0,85638500,0e5c0c92b438b37a14d4d3e68cc9cbeca5c85d1291e4b28c0ce1e6dc64429952,ok,unique,179742046,17483,0,0
+ds1-sf-profiling,NTransform-Gear,finesse-gear-v1,1,2,179761540,179742046,0,17486,0,255959875,fba8022e0efd7df46d54e140b0774036d6f622432ba0ae57203b8ec9184fcc17,ok,unique,179742046,17483,0,0
+ds1-sf-profiling,NTransform-Gear,finesse-gear-v1,2,1,179761540,179742046,0,17486,0,255759834,fba8022e0efd7df46d54e140b0774036d6f622432ba0ae57203b8ec9184fcc17,ok,unique,179742046,17483,0,0
+ds1-sf-profiling,Finesse-Gear,finesse-gear-v1,2,2,179761540,179742046,0,17486,0,85784167,0e5c0c92b438b37a14d4d3e68cc9cbeca5c85d1291e4b28c0ce1e6dc64429952,ok,unique,179742046,17483,0,0
+ds1-sf-profiling,Finesse-Gear,finesse-gear-v1,3,1,179761540,179742046,0,17486,0,85688833,0e5c0c92b438b37a14d4d3e68cc9cbeca5c85d1291e4b28c0ce1e6dc64429952,ok,unique,179742046,17483,0,0
+ds1-sf-profiling,NTransform-Gear,finesse-gear-v1,3,2,179761540,179742046,0,17486,0,256057375,fba8022e0efd7df46d54e140b0774036d6f622432ba0ae57203b8ec9184fcc17,ok,unique,179742046,17483,0,0
+ds1-sf-profiling,NTransform-Gear,finesse-gear-v1,4,1,179761540,179742046,0,17486,0,256154917,fba8022e0efd7df46d54e140b0774036d6f622432ba0ae57203b8ec9184fcc17,ok,unique,179742046,17483,0,0
+ds1-sf-profiling,Finesse-Gear,finesse-gear-v1,4,2,179761540,179742046,0,17486,0,86196333,0e5c0c92b438b37a14d4d3e68cc9cbeca5c85d1291e4b28c0ce1e6dc64429952,ok,unique,179742046,17483,0,0
+ds1-sf-profiling,Finesse-Gear,finesse-gear-v1,5,1,179761540,179742046,0,17486,0,85882875,0e5c0c92b438b37a14d4d3e68cc9cbeca5c85d1291e4b28c0ce1e6dc64429952,ok,unique,179742046,17483,0,0
+ds1-sf-profiling,NTransform-Gear,finesse-gear-v1,5,2,179761540,179742046,0,17486,0,255284584,fba8022e0efd7df46d54e140b0774036d6f622432ba0ae57203b8ec9184fcc17,ok,unique,179742046,17483,0,0

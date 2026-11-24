@@ -1,0 +1,2 @@
+experiment_id,wall_time_us,wall_time_ms,cpu_time_us,cpu_time_ms,cpu_percent_one_core,process_peak_rss_bytes,threads,processing_wall_time_us,processing_wall_time_ms
+ds4-sf-benchmark-1795512514901966-56685,1163678.834,1163.678834,1112834,1112.834,95.6306815493733,106086400,1,1163107.5,1163.1075

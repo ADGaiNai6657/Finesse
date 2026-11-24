@@ -1,0 +1,9 @@
+experiment_id,file_id,path,extension,bytes,sha256,chunks,unique_first_seen,duplicates
+ds4-delta-benchmark-1795512516072826-56696,0,../../../../../FastCDC/Dataset/DataSet_4/backup_00.bin,.bin,33554432,f3f1cb1c67c47c169c8999c5203c9be16fdd5433dd011f2a1ed3e44ad07983f8,3114,2990,124
+ds4-delta-benchmark-1795512516072826-56696,1,../../../../../FastCDC/Dataset/DataSet_4/backup_01.bin,.bin,33554432,21075aa7b5547ddd5729c261cf3fa1ee39d599b76ce029ae726f6e0e2beacea1,3112,89,3023
+ds4-delta-benchmark-1795512516072826-56696,2,../../../../../FastCDC/Dataset/DataSet_4/backup_02.bin,.bin,33554432,287bc89d836ad4f4c5daa1354cb52247a42fad33cf5a3795674cbcc59756bc51,3124,97,3027
+ds4-delta-benchmark-1795512516072826-56696,3,../../../../../FastCDC/Dataset/DataSet_4/backup_03.bin,.bin,33554432,29ff17c0b4cffffb3b4a92846c687bdfb18ad8ebb2a44554e9bb5ff18935434a,3115,89,3026
+ds4-delta-benchmark-1795512516072826-56696,4,../../../../../FastCDC/Dataset/DataSet_4/backup_04.bin,.bin,33554432,6c86b0216db0892d90ccf657504efe783ee2d653bc3e609331c9aaaf5eb7595c,3116,88,3028
+ds4-delta-benchmark-1795512516072826-56696,5,../../../../../FastCDC/Dataset/DataSet_4/backup_05.bin,.bin,33554432,d8912ba171883e011b0e16958d5056f4acefd0ff9b83d408f97122477e871069,3117,90,3027
+ds4-delta-benchmark-1795512516072826-56696,6,../../../../../FastCDC/Dataset/DataSet_4/backup_06.bin,.bin,33554432,9eafb6528e2578ec678eb47d542168dbbaf859bde009cad9ced81ab9489c3b81,3118,92,3026
+ds4-delta-benchmark-1795512516072826-56696,7,../../../../../FastCDC/Dataset/DataSet_4/backup_07.bin,.bin,33554432,eb27fa09344525cc74b6850843df59ae23bf44612bdce084a7677c705a0a526e,3115,89,3026

@@ -39,6 +39,7 @@ static auto checkedRecord(const EncodedStore &store, const StoredChunkId id) -> 
 //输入：record：记录的原长和完整性摘要；bytes：待验证内容。
 //输出：无返回值；长度或摘要不符时抛异常，不修改记录和字节。
 static auto verifyBytes(const EncodedChunk &record, const std::string_view bytes) -> void {
+    const metrics::Timer verification("chunk_sha256_verify", bytes.size());
     if (bytes.size() != record.originalLength || sha256(bytes) != record.restoredSha256) {
         throw std::runtime_error("encoded chunk length/integrity verification failed");
     }
@@ -54,6 +55,8 @@ auto restoreEncodedChunk(const EncodedStore &store, const StoredChunkId id) -> s
             throw std::invalid_argument("Raw chunk has base reference");
         }
         verifyBytes(record, record.payload);
+        const metrics::Timer read("raw_read", record.payload.size());
+        metrics::count("raw_read");
         return record.payload;
     }
     if (record.kind != PayloadKind::Delta || !record.baseId || *record.baseId >= id
@@ -68,7 +71,10 @@ auto restoreEncodedChunk(const EncodedStore &store, const StoredChunkId id) -> s
     if (record.originalLength > std::numeric_limits<std::size_t>::max()) {
         throw std::length_error("decoded chunk exceeds address space");
     }
+    metrics::Timer decoding("delta_decode", record.payload.size(), true);
     auto restored = decodeDelta(view(base.payload), record.payload, static_cast<std::size_t>(record.originalLength));
+    decoding.finish("ok", restored.size(), base.id);
+    metrics::count("delta_decode");
     verifyBytes(record, restored);
     return restored;
 }
@@ -82,8 +88,10 @@ auto appendEncodedChunk(EncodedStore &store, const ChunkId firstChunkId, const C
         throw std::invalid_argument("null target with nonzero length");
     }
     const std::string_view bytes(target.length == 0 ? "" : reinterpret_cast<const char *>(target.data), target.length);
+    metrics::Timer digest("target_sha256", bytes.size());
     EncodedChunk record {store.chunks.size(), firstChunkId, PayloadKind::Raw, std::nullopt,
                          target.length, sha256(bytes), {}};
+    digest.finish();
     std::optional<DeltaAttempt> attempt;
     if (candidate) {
         if (target.length < FEATURE_COUNT) {
@@ -95,14 +103,16 @@ auto appendEncodedChunk(EncodedStore &store, const ChunkId firstChunkId, const C
             throw std::invalid_argument("candidate must be eligible earlier Raw with valid SF slots");
         }
         verifyBytes(base, base.payload);
-        const auto encodeStart = SteadyClock::now();
+        std::int64_t encodeNs = 0, verifyNs = 0;
+        // Xdelta 编码与即时回放独立计时，基块摘要检查在两者之外。
+        metrics::Timer encoding("delta_encode", target.length, true, &encodeNs);
         auto delta = encodeDelta(view(base.payload), target);
-        const auto encodeNs = elapsedSince(encodeStart);
-        const auto verifyStart = SteadyClock::now();
+        encoding.finish(delta.size() < bytes.size() ? "accepted" : "raw_fallback", delta.size(), base.id);
+        metrics::Timer verify("roundtrip_verify", target.length, true, &verifyNs);
         if (decodeDelta(view(base.payload), delta, bytes.size()) != bytes) {
             throw std::runtime_error("Xdelta roundtrip byte equality failed");
         }
-        const auto verifyNs = elapsedSince(verifyStart);
+        verify.finish("ok", bytes.size(), base.id);
         const bool accepted = delta.size() < bytes.size();  //只在编码后所消耗的存储空间小于原本的存储空间时接受
         attempt = DeltaAttempt {record.id, *candidate, bytes.size(), delta.size(), accepted, encodeNs, verifyNs};
         if (accepted) {
@@ -111,10 +121,12 @@ auto appendEncodedChunk(EncodedStore &store, const ChunkId firstChunkId, const C
             record.payload = std::move(delta);
         }
     }
+    metrics::Timer storage("encoded_payload_write", target.length);
     if (record.kind == PayloadKind::Raw) {
         record.payload = bytes;
     }
     const auto kind = record.kind;
+    const auto storedBytes = record.payload.size();
     // 追加是原子的：尝试记录分配失败时回滚内容记录。
     store.chunks.push_back(std::move(record));
     try {
@@ -123,6 +135,7 @@ auto appendEncodedChunk(EncodedStore &store, const ChunkId firstChunkId, const C
         store.chunks.pop_back();
         throw;
     }
+    storage.finish("ok", storedBytes);
     return kind;
 }
 
@@ -130,7 +143,9 @@ auto appendEncodedChunk(EncodedStore &store, const ChunkId firstChunkId, const C
 //输入：input：已精确去重的原文池和首次出现映射；algorithm：批准的算法名。
 //输出：返回拥有 Raw/Delta 内容的 EncodedStore，不保留原文视图；只有最终合格 Raw 入候选索引，错误抛异常。
 auto buildEncodedStore(const ExperimentInput &input, const std::string_view algorithm) -> EncodedStore {
+    const metrics::Scope scope(algorithm, "build");
     const auto start = SteadyClock::now();
+    const metrics::Timer build("encoded_pool_build");
     auto index = makeResemblanceIndex(algorithm, PROFILE_ID);
     EncodedStore output;
     output.algorithm = algorithm;
@@ -146,12 +161,16 @@ auto buildEncodedStore(const ExperimentInput &input, const std::string_view algo
         if (first.storedId != source.id || first.isDuplicate) {
             throw std::invalid_argument("input unique-position mapping is invalid");
         }
+        const metrics::Scope chunk(first.fileIndex, first.id);
         SignatureResult signature;
         std::optional<Candidate> candidate;
         if (source.bytes.size() >= FEATURE_COUNT) {
             const auto target = view(source.bytes);
+            // 特征提取结束之后才进入 FirstFit 索引查询。
+            metrics::Timer extraction("feature_extraction", target.length);
             signature = algorithm == "Finesse-Gear" ? extractFinesse(target, hash)
                 : extractNTransform(target, hash, parameters);
+            extraction.finish();
             candidate = queryCandidate(index, source.id, signature, algorithm, PROFILE_ID);
         }
         const auto kind = appendEncodedChunk(output, first.id, view(source.bytes), candidate);
@@ -160,5 +179,6 @@ auto buildEncodedStore(const ExperimentInput &input, const std::string_view algo
         }
     }
     output.buildNs = elapsedSince(start);
+    if (metrics::active()) metrics::count("sf_index_entries", index.entries.size());
     return output;
 }

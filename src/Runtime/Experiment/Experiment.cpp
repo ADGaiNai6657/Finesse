@@ -4,6 +4,7 @@
 #include "BuildInfo.h"
 #include "Finesse/Finesse.h"
 #include "IO.h"
+#include "Instrumentation/Run.h"
 #include "NTransform/NTransform.h"
 #include "Pipeline/Pipeline.h"
 
@@ -223,19 +224,24 @@ static auto runDiagnostics(const ExperimentConfig &config, const ExperimentInput
                            const HashConfig &hash, const TransformParameters &parameters) -> void {
     CsvRows rows {{"algorithm", "profileId", "chunkId", "candidateId", "querySlot", "historicalSlot", "status"}};
     for (std::size_t algorithm = 0; algorithm < ALGORITHMS.size(); ++algorithm) {
+        const metrics::Scope scope(ALGORITHMS[algorithm], "diagnostics");
         auto index = makeResemblanceIndex(ALGORITHMS[algorithm], PROFILE_ID);
         for (const auto position : selected.chunkPositions) {
             const auto &chunk = input.chunks.at(position);
             if (chunk.length < FEATURE_COUNT) {
                 continue;
             }
+            const metrics::Scope occurrence(chunk.fileIndex, chunk.id);
             const auto view = inputChunkView(input, chunk);
+            metrics::Timer extraction("feature_extraction", chunk.length);
             const auto signature = extract(algorithm, view, hash, parameters);
+            extraction.finish();
             const auto candidate = queryThenInsert(index, chunk.id, signature, ALGORITHMS[algorithm], PROFILE_ID);
             rows.push_back({std::string(ALGORITHMS[algorithm]), std::string(PROFILE_ID), std::to_string(chunk.id),
                 candidate ? std::to_string(candidate->chunkId) : "", candidate ? std::to_string(candidate->querySlot) : "",
                 candidate ? std::to_string(candidate->historicalSlot) : "", candidate ? "matched" : "unmatched"});
         }
+        if (metrics::active()) metrics::count("sf_index_entries", index.entries.size());
     }
     writeFile(config.outputDirectory / "diagnostics.csv", encodeCsv(rows));
 }
@@ -243,11 +249,12 @@ static auto runDiagnostics(const ExperimentConfig &config, const ExperimentInput
 //执行 SF 微基准、校验输出并导出统计
 //输入：config：已校验的实验配置和新结果目录。
 //输出：无返回值；加载去重后运行一次预热、五轮交替测量，导出摘要/汇总/可选诊断；失败记录原因并抛异常，拒绝覆盖。
-auto runExperiment(const ExperimentConfig &config) -> void {
+auto runExperiment(const ExperimentConfig &config, const metrics::Mode mode) -> void {
     std::filesystem::create_directories(config.outputDirectory.parent_path());
     if (!std::filesystem::create_directory(config.outputDirectory)) {
         throw std::runtime_error("result directory already exists: " + config.outputDirectory.string());
     }
+    metrics::Run metricsRun(mode, config.outputDirectory, "sf", config.values);
     std::string metadata;
     try {
         metadata = "timestamp=" + utcTimestamp() + "\ndocumentVersion=0.4+D-21\napprovals=D-01..D-12,D-14..D-21\n";
@@ -281,6 +288,7 @@ auto runExperiment(const ExperimentConfig &config) -> void {
         writeFile(config.outputDirectory / "parameters.csv", experimentParameterCsv());
         writeFile(config.outputDirectory / "source-files.csv", SOURCE_FILES_CSV);
         const auto input = loadExperimentInput(config);
+        metricsRun.captureInput(input);
         exportExperimentInput(config, input);
         exportChunkStore(config, input);
         const auto selected = selectSFInput(input, config.values.at("sfInput"));
@@ -303,12 +311,16 @@ auto runExperiment(const ExperimentConfig &config) -> void {
         if (validCount == 0 || effectiveBytes == 0) {
             throw std::invalid_argument("no supported chunks after excluding length < 12");
         }
+        // 保持 Benchmark 的 SF 内循环不做逐块明细采集。
+        const bool detailed = metrics::profiling();
+        std::vector<const InputChunk *> viewReferences;
         std::vector<ChunkView> views;
         views.reserve(validCount);
         for (const auto position : selected.chunkPositions) {
             const auto &chunk = input.chunks.at(position);
             if (chunk.length >= FEATURE_COUNT) {
                 views.push_back(inputChunkView(input, chunk));
+                if (detailed) viewReferences.push_back(&chunk);
             }
         }
         const auto processedBytes = checkedMultiply(effectiveBytes, config.iterations);
@@ -328,16 +340,30 @@ auto runExperiment(const ExperimentConfig &config) -> void {
         for (std::size_t repetition = 0; repetition <= MEASUREMENT_RUNS; ++repetition) {
             for (std::size_t order = 0; order < ALGORITHMS.size(); ++order) {
                 const auto algorithm = repetition > 0 && repetition % 2 == 0 ? 1 - order : order;
-                const auto start = std::chrono::steady_clock::now();
+                const metrics::Scope scope(ALGORITHMS[algorithm], repetition == 0 ? "warmup" : "measurement");
+                std::int64_t elapsed = 0;
+                // 整轮计时含签名写入。输出摘要和 CSV 在停止计时后执行。
+                metrics::Timer extractRound("sf_round", processedBytes, true, &elapsed);
                 std::size_t position = 0;
                 for (std::uint64_t iteration = 0; iteration < config.iterations; ++iteration) {
-                    for (const auto view : views) {
-                        output[position++] = extract(algorithm, view, hash, parameters);
+                    if (detailed) {
+                        for (std::size_t i = 0; i < views.size(); ++i) {
+                            const auto &chunk = *viewReferences[i];
+                            const metrics::Scope occurrence(chunk.fileIndex, chunk.id);
+                            const metrics::Timer extraction("feature_extraction", chunk.length, true);
+                            output[position++] = extract(algorithm, views[i], hash, parameters);
+                        }
+                    } else {
+                        for (const auto view : views) {
+                            output[position++] = extract(algorithm, view, hash, parameters);
+                        }
                     }
                 }
-                const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                    std::chrono::steady_clock::now() - start).count();
+                extractRound.finish();
+                metrics::count("sf_extractions", outputCount);
+                metrics::Timer verification("sf_output_digest");
                 const auto digest = outputDigest(output);
+                verification.finish();
                 if (repetition == 0) {
                     expectedDigests[algorithm] = digest;
                 } else {
@@ -380,12 +406,14 @@ auto runExperiment(const ExperimentConfig &config) -> void {
                 number(meanSpeeds[a] / 1e6), number(means[1] / means[0]), config.values.at("sfInput")});
         }
         writeFile(config.outputDirectory / "summary.csv", encodeCsv(summary));
+        metricsRun.finish(true);
         writeFile(config.outputDirectory / "run.txt", "status=ok\n" + metadata);
     } catch (const std::exception &error) {
         std::error_code ignored;
         std::filesystem::remove(config.outputDirectory / "summary.csv", ignored);
         try {
             writeFile(config.outputDirectory / "run.txt", "status=failed\nreason=" + std::string(error.what()) + "\n" + metadata);
+            metricsRun.finish(false, error.what());
         } catch (...) {
             // 不掩盖原始失败；主程序仍返回非零。
         }

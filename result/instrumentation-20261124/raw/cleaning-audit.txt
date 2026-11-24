@@ -1,0 +1,2 @@
+verified all formal rounds, recovery summaries, pairs, source ranges and unique IDs
+verified modes, legacy compatibility, stage units, operation totals, file recovery and wall-clock boundaries

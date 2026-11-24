@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
+#include <openssl/types.h>
 #include <filesystem>
 #include <string>
 #include <string_view>
@@ -16,6 +18,21 @@ auto readFile(const std::filesystem::path &path) -> std::string;
 //输入：path：目标文件路径；bytes：待写字节串。
 //输出：无返回值；创建或截断目标文件并写入全部字节，I/O 失败抛异常。
 auto writeFile(const std::filesystem::path &path, std::string_view bytes) -> void;
+// 维护一个增量 SHA-256 上下文，供原始和恢复字节使用。
+class Sha256Stream {
+public:
+    // 初始化 OpenSSL 摘要上下文。
+    Sha256Stream();
+    // 释放摘要上下文。
+    ~Sha256Stream();
+    // 按原有顺序加入一段字节。
+    void update(std::string_view bytes);
+    // 完成计算并返回小写十六进制摘要。
+    auto finish() -> std::string;
+private:
+    std::unique_ptr<EVP_MD_CTX, void (*)(EVP_MD_CTX *)> context;
+};
+
 //计算字节串的 SHA-256 完整性摘要
 //输入：bytes：完整只读字节串，可含零字节。
 //输出：返回 64 个小写十六进制字符；OpenSSL 失败时抛异常，不承担精确去重。

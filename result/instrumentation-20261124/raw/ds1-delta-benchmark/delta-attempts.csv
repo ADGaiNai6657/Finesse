@@ -1,0 +1,2 @@
+algorithm,storedId,baseId,querySlot,historicalSlot,originalBytes,deltaBytes,accepted,reason,encodeNs,verifyNs
+NTransform-Gear,15535,7827,0,0,10872,3669,true,strictly-smaller,84667,6542

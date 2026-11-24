@@ -1,0 +1,6 @@
+experiment_id,file_id,path,extension,bytes,sha256,chunks,unique_first_seen,duplicates
+ds1-delta-benchmark-1795512434190209-56537,0,../../../../../FastCDC/Dataset/DataSet_1/emacs-21.4a.tar.gz,.gz,20403483,1d50ddae117c48d689a3d772e390569edccfdc22168be0112d2093bd2d7c3216,2009,2009,0
+ds1-delta-benchmark-1795512434190209-56537,1,../../../../../FastCDC/Dataset/DataSet_1/emacs-22.1.tar.gz,.gz,38172226,1ec43bef7127e572f92d7c3a846951cf8e263e27445c62c867035f94681c3ed0,3721,3721,0
+ds1-delta-benchmark-1795512434190209-56537,2,../../../../../FastCDC/Dataset/DataSet_1/emacs-22.2.tar.gz,.gz,38694318,216839e1fb38ca4f2ed0a07689fb47ee80d90845f34e0a56fe781d6aa462e367,3765,3765,0
+ds1-delta-benchmark-1795512434190209-56537,3,../../../../../FastCDC/Dataset/DataSet_1/emacs-22.3.tar.gz,.gz,39587396,7bd9b719db8ee20c75ee0d256737f7fd2c0e2ea30a285a3afbfc32c856420d16,3794,3794,0
+ds1-delta-benchmark-1795512434190209-56537,4,../../../../../FastCDC/Dataset/DataSet_1/emacs-23.1.tar.gz,.gz,42904117,a94cd46301f000d2d1dcd3fd7ef08ad952846d01ca5d4168b4ec3e38e857da47,4197,4194,3

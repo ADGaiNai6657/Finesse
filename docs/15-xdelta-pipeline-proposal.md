@@ -125,3 +125,7 @@ python3 scripts/verify_delta_results.py results/fastcdc-dataset-1-delta-release-
 run.txt 记录固定上游提交/版本/源码清单摘要、所有策略、输入配置/描述文件/完整源摘要、构建 source-files 快照与参数、计时范围和释放后验证状态；关键 CSV 再保存 SHA-256。xdelta-source-files.csv 是构建时嵌入清单，无运行时外部源码依赖。
 
 实跑与验收记录见 [16-delta-validation.md](16-delta-validation.md)。磁盘持久化、跨进程恢复、400MB LRU 和并行流水线仍未实现，相关取舍须另经人类批准。
+
+## 统一统计与整文件恢复证据
+
+第 17 号文档的实现见 [18](18-experiment-instrumentation.md)。现有即时回放和逐次恢复保持执行。完整且有序的范围复用已恢复字节累计文件 SHA-256，独立写入 `file-restoration.csv`。该文件的流式摘要区间不并入旧的 `restorationSweepNs`。

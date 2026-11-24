@@ -35,6 +35,39 @@ def metadata(path):
     return dict(line.split("=", 1) for line in path.read_text().splitlines() if "=" in line)
 
 
+def verify_file_restoration(directory, meta, sources, occurrences):
+    """Recompute file coverage from ordered ranges and check the emitted digest rows."""
+    offsets = [0] * len(sources)
+    contiguous = [True] * len(sources)
+    for chunk in occurrences:
+        file_id = int(chunk["fileIndex"])
+        check(0 <= file_id < len(sources), "invalid recovery file ID")
+        offset = int(chunk["offset"])
+        contiguous[file_id] &= offsets[file_id] == offset
+        offsets[file_id] = offset + int(chunk["length"])
+    if not sources:
+        check(not (directory / "file-restoration.csv").exists(), "unexpected file restoration evidence")
+        return
+    evidence = rows(directory / "file-restoration.csv")
+    expected = [(algorithm, str(i)) for algorithm in ("Finesse-Gear", "NTransform-Gear")
+                for i in range(len(sources))]
+    check([(row["algorithm"], row["file_id"]) for row in evidence] == expected,
+          "file restoration rows missing, duplicated or reordered")
+    for row in evidence:
+        i = int(row["file_id"])
+        source = sources[i]
+        complete = contiguous[i] and offsets[i] == int(source["bytes"])
+        if meta.get("input.inputMode") == "raw":
+            check(complete, "raw source coverage")
+        check(row["expected_sha256"] == source["sha256"], "file restoration expected digest")
+        if complete:
+            check(row["status"] == "ok" and row["restored_sha256"] == source["sha256"]
+                  and row["restored_bytes"] == source["bytes"], "file restoration mismatch")
+        else:
+            check(row["status"] == "not_applicable" and not row["restored_sha256"]
+                  and not row["restored_bytes"], "partial manifest marked as whole-file recovery")
+
+
 #独立核对 Delta 产物、源范围摘要、引用资格和加权指标
 #输入：directory：已完成的 Delta 结果目录。
 #输出：返回两算法 compression-summary 字典列表；任何状态、摘要、引用或计数不符均失败，不从 CSV 重载 payload。
@@ -58,6 +91,8 @@ def verify_delta_results(directory):
     occurrences = rows(directory / "occurrences.csv")
     stored = rows(directory / "stored-chunks.csv")
     check(len(manifest) == len(refs) == len(occurrences), "occurrence count")
+    if meta.get("fileVerificationPolicy") == "ordered-complete-source-ranges":
+        verify_file_restoration(directory, meta, sources, occurrences)
     unique, expected, canonical, counts = {}, {}, {}, collections.Counter()
     current_path, content = None, None
     for source, ref, occurrence in zip(manifest, refs, occurrences):

@@ -74,3 +74,5 @@ python3 scripts/verify_delta_results.py results/fastcdc-dataset-1-delta-release-
 本次仅移动完整模块目录并同步 CMake 路径和文档，未修改源码或测试内容。迁移前后逐文件 SHA-256 核对：src 全部 32 个文件逐字节相同，包括用户已有的 ChunkStore.cpp 未提交审查改动；tests、scripts、configs、third_party 内容也保持不变。
 
 在新目录下执行 `cmake --build build/debug -j 4`、`ctest --test-dir build/debug --output-on-failure`，ASan/UBSan 配置 6/6 通过；Release 对应构建与 CTest 也 6/6 通过。源码快照中的文件路径、代码 revision 及文档改变会使 sourceDigest 更新，历史结果和其旧路径快照保留原样。本次未重跑四组质量数据，不产生新的性能或压缩结论。
+
+2026-11-24 新增统一采集验收。macOS Release 和 Debug（ASan/UBSan）各 7/7。FastCDC DataSet_4 的三种采集模式保持编码及恢复结果一致，独立审计通过完整块级和文件级恢复记录。开销与原始结果见 [18](18-experiment-instrumentation.md)。

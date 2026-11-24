@@ -1,0 +1,4 @@
+experiment_id,algorithm,phase,index_type,queries,hits,misses,insert_calls,final_entries,query_us,insert_us,initialize_us
+ds3-sf-profiling-1795512499594381-56658,Finesse-Gear,diagnostics,super_feature,40394,8721,31673,40394,103664,3929.74499999979,6873.42499999851,0.083
+ds3-sf-profiling-1795512499594381-56658,NTransform-Gear,diagnostics,super_feature,40394,14424,25970,40394,90162,6200.55000000004,5348.39699999866,0.125
+ds3-sf-profiling-1795512499594381-56658,shared,input,sha1,60453,20059,40394,40394,40394,58721.5439999998,4881.25099999969,

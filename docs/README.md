@@ -38,6 +38,8 @@
 | [14-sha1-chunk-store.md](14-sha1-chunk-store.md) | D-21：精确查重、内存唯一池、引用与统计契约 |
 | [15-xdelta-pipeline-proposal.md](15-xdelta-pipeline-proposal.md) | 已批准 D-22～D-24：真实 xdelta、Raw/Delta 存储、配置、恢复与指标 |
 | [16-delta-validation.md](16-delta-validation.md) | Debug/Release 验收和四组 Delta 实跑证据 |
+| [17-timer-asking.md](17-timer-asking.md) | 通用实验统计、计时与导出需求 |
+| [18-experiment-instrumentation.md](18-experiment-instrumentation.md) | 实现、字段、运行模式与基准证据 |
 
 ## 如何使用
 

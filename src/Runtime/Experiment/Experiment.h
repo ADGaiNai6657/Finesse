@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common/Types.h"
+#include "Instrumentation/Metrics.h"
 #include "ChunkStore/ChunkStore.h"
 
 #include <filesystem>
@@ -71,7 +72,7 @@ auto inputChunkView(const ExperimentInput &input, const InputChunk &chunk) -> Ch
 //执行 SF 微基准、校验输出并导出统计
 //输入：config：已校验的实验配置和新结果目录。
 //输出：无返回值；加载去重后运行一次预热、五轮交替测量，导出摘要/汇总/可选诊断；失败记录原因并抛异常，拒绝覆盖。
-auto runExperiment(const ExperimentConfig &config) -> void;
+auto runExperiment(const ExperimentConfig &config, metrics::Mode mode = metrics::Mode::Benchmark) -> void;
 
 // 两种实验入口共用同一来源/清单与唯一池统计导出契约。
 //导出全部出现清单和源文件完整性记录

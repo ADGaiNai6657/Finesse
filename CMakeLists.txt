@@ -11,6 +11,9 @@ include(CTest)
 include(cmake/Xdelta.cmake)
 
 set(FINESSE_SOURCES
+    src/Runtime/Instrumentation/Metrics.cpp
+    src/Runtime/Instrumentation/Run.cpp
+    src/Runtime/Instrumentation/Platform.cpp
     src/Common/Types.cpp
     src/Hashing/GearHash/GearHash.cpp
     src/Hashing/Hash/Hash.cpp
@@ -77,6 +80,9 @@ target_include_directories(finesse_core
         src/Runtime
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 target_link_libraries(finesse_core PUBLIC OpenSSL::Crypto PRIVATE xdelta3::xdelta3)
+if(WIN32)
+    target_link_libraries(finesse_core PRIVATE psapi advapi32)
+endif()
 target_compile_options(finesse_core PRIVATE -Wall -Wextra -Wpedantic)
 set_target_properties(finesse_core PROPERTIES INTERPROCEDURAL_OPTIMIZATION FALSE)
 if(FINESSE_SANITIZERS)
@@ -88,6 +94,10 @@ target_link_libraries(Finesse PRIVATE finesse_core)
 target_compile_options(Finesse PRIVATE -Wall -Wextra -Wpedantic)
 
 if(BUILD_TESTING)
+    find_package(Threads REQUIRED)
+    add_executable(instrumentation_tests tests/InstrumentationTests.cpp)
+    target_link_libraries(instrumentation_tests PRIVATE finesse_core Threads::Threads)
+    add_test(NAME instrumentation COMMAND instrumentation_tests)
     add_executable(finesse_tests tests/CoreTests.cpp)
     target_link_libraries(finesse_tests PRIVATE finesse_core)
     target_compile_options(finesse_tests PRIVATE -Wall -Wextra -Wpedantic)

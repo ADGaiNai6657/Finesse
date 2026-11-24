@@ -1,0 +1,2 @@
+experiment_id,wall_time_us,wall_time_ms,cpu_time_us,cpu_time_ms,cpu_percent_one_core,process_peak_rss_bytes,threads,processing_wall_time_us,processing_wall_time_ms
+ds3-delta-benchmark-1795512493765812-56648,5736858.5,5736.8585,5502930,5502.93,95.9223589007817,1609908224,1,5735381.041,5735.381041

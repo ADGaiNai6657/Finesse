@@ -1,4 +1,5 @@
 #include "IO.h"
+#include "Instrumentation/Metrics.h"
 
 #include <openssl/evp.h>
 
@@ -38,6 +39,7 @@ auto readFile(const std::filesystem::path &path) -> std::string {
 //输入：path：目标文件路径；bytes：待写字节串。
 //输出：无返回值；创建或截断目标文件并写入全部字节，I/O 失败抛异常。
 auto writeFile(const std::filesystem::path &path, const std::string_view bytes) -> void {
+    const metrics::Timer timer("artifact_write", bytes.size());
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     output.exceptions(std::ios::failbit | std::ios::badbit);
     output.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
@@ -47,14 +49,29 @@ auto writeFile(const std::filesystem::path &path, const std::string_view bytes) 
 //计算字节串的 SHA-256 完整性摘要
 //输入：bytes：完整只读字节串，可含零字节。
 //输出：返回 64 个小写十六进制字符；OpenSSL 失败时抛异常，不承担精确去重。
-auto sha256(const std::string_view bytes) -> std::string {
-    const std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> context(EVP_MD_CTX_new(), EVP_MD_CTX_free);
+// 分配并初始化 OpenSSL SHA-256 上下文。
+Sha256Stream::Sha256Stream() : context(EVP_MD_CTX_new(), EVP_MD_CTX_free) {
+    if (!context || EVP_DigestInit_ex(context.get(), EVP_sha256(), nullptr) != 1) {
+        throw std::runtime_error("OpenSSL SHA-256 initialization failed");
+    }
+}
+
+// 释放独占的 OpenSSL 上下文。
+Sha256Stream::~Sha256Stream() = default;
+
+// 加入当前字节段，不保留传入缓冲的引用。
+void Sha256Stream::update(const std::string_view bytes) {
+    if (EVP_DigestUpdate(context.get(), bytes.data(), bytes.size()) != 1) {
+        throw std::runtime_error("OpenSSL SHA-256 update failed");
+    }
+}
+
+// 读取摘要并序列化为小写十六进制。
+auto Sha256Stream::finish() -> std::string {
     unsigned char digest[EVP_MAX_MD_SIZE] {};
     unsigned int length = 0;
-    if (!context || EVP_DigestInit_ex(context.get(), EVP_sha256(), nullptr) != 1
-        || EVP_DigestUpdate(context.get(), bytes.data(), bytes.size()) != 1
-        || EVP_DigestFinal_ex(context.get(), digest, &length) != 1) {
-        throw std::runtime_error("OpenSSL SHA-256 failed");
+    if (EVP_DigestFinal_ex(context.get(), digest, &length) != 1) {
+        throw std::runtime_error("OpenSSL SHA-256 finalization failed");
     }
     std::ostringstream text;
     text << std::hex << std::setfill('0');
@@ -62,6 +79,13 @@ auto sha256(const std::string_view bytes) -> std::string {
         text << std::setw(2) << static_cast<unsigned int>(digest[i]);
     }
     return text.str();
+}
+
+// 用流式接口计算一段连续字节的 SHA-256。
+auto sha256(const std::string_view bytes) -> std::string {
+    Sha256Stream hash;
+    hash.update(bytes);
+    return hash.finish();
 }
 
 //检查文本是否是有效且不含 NUL 的 UTF-8

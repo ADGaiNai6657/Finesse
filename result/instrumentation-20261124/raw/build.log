@@ -1,0 +1,21 @@
+-- xdelta3: liblzma secondary compression: OFF
+-- xdelta3: armor mode disabled
+-- Configuring done (0.4s)
+-- Generating done (0.1s)
+-- Build files have been written to: /Users/adgainai6657/CLionProjects/Finesse/build/release
+[  6%] Built target xdelta3lib
+[  9%] Building CXX object CMakeFiles/finesse_core.dir/src/Runtime/Instrumentation/Run.cpp.o
+[ 12%] Building CXX object CMakeFiles/finesse_core.dir/src/Runtime/Experiment/DeltaExperiment.cpp.o
+[ 15%] Building CXX object CMakeFiles/finesse_core.dir/src/Runtime/Experiment/Experiment.cpp.o
+[ 18%] Linking CXX static library libfinesse_core.a
+[ 68%] Built target finesse_core
+[ 71%] Linking CXX executable chunk_store_tests
+[ 75%] Linking CXX executable instrumentation_tests
+[ 78%] Linking CXX executable Finesse
+[ 81%] Linking CXX executable delta_store_tests
+[ 84%] Linking CXX executable finesse_tests
+[ 87%] Built target Finesse
+[ 90%] Built target chunk_store_tests
+[ 93%] Built target finesse_tests
+[ 96%] Built target delta_store_tests
+[100%] Built target instrumentation_tests

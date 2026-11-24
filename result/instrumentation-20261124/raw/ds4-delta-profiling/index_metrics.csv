@@ -1,0 +1,4 @@
+experiment_id,algorithm,phase,index_type,queries,hits,misses,insert_calls,final_entries,query_us,insert_us,initialize_us
+ds4-delta-profiling-1795512518796858-56717,Finesse-Gear,build,super_feature,3624,140,3484,3484,10452,471.111,549.325000000007,0.208
+ds4-delta-profiling-1795512518796858-56717,NTransform-Gear,build,super_feature,3624,297,3327,3327,9981,819.320000000001,625.889000000002,0.167
+ds4-delta-profiling-1795512518796858-56717,shared,input,sha1,24931,21307,3624,3624,3624,10686.1359999999,438.075000000014,

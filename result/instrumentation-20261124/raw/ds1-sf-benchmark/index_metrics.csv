@@ -1,0 +1,4 @@
+experiment_id,algorithm,phase,index_type,queries,hits,misses,insert_calls,final_entries,query_us,insert_us,initialize_us
+ds1-sf-benchmark-1795512431382791-56529,Finesse-Gear,diagnostics,super_feature,17483,0,17483,17483,52449,1253.30000000003,2534.67500000029,0.083
+ds1-sf-benchmark-1795512431382791-56529,NTransform-Gear,diagnostics,super_feature,17483,1,17482,17483,52448,1697.304,2555.98300000033,0.083
+ds1-sf-benchmark-1795512431382791-56529,shared,input,sha1,17486,3,17483,17483,17483,1695.87999999991,1454.88399999996,

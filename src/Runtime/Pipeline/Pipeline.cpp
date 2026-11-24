@@ -1,4 +1,5 @@
 #include "Pipeline.h"
+#include "Instrumentation/Metrics.h"
 
 #include <stdexcept>
 
@@ -6,6 +7,7 @@
 //输入：algorithm：Finesse-Gear 或 NTransform-Gear；profileId：已批准配置标识。
 //输出：返回空索引；不支持的算法或配置抛异常。
 auto makeResemblanceIndex(const std::string_view algorithm, const std::string_view profileId) -> ResemblanceIndex {
+    const metrics::Timer timer("sf_index_initialize");
     if ((algorithm != "Finesse-Gear" && algorithm != "NTransform-Gear") || profileId != PROFILE_ID) {
         throw std::invalid_argument("unsupported index algorithm/profile");
     }
@@ -30,13 +32,22 @@ static auto validateIndex(const ResemblanceIndex &index, const ChunkId chunkId, 
 //输出：返回候选的 ID、当前槽和历史槽，未命中返回空；不修改索引，同键保留最早插入者。
 auto queryCandidate(const ResemblanceIndex &index, const ChunkId chunkId, const SignatureResult &signature,
                     const std::string_view algorithm, const std::string_view profileId) -> std::optional<Candidate> {
+    metrics::Timer timer("sf_lookup", metrics::NoId, true);
     validateIndex(index, chunkId, signature, algorithm, profileId);
     for (std::size_t s = 0; s < SUPER_FEATURE_COUNT; ++s) {
         const auto found = index.entries.find(signature.superFeatures[s]);
         if (found != index.entries.end()) {
+            timer.finish("hit", metrics::NoId, found->second.chunkId);
+            metrics::count("sf_hit");
+            if (metrics::active()) {
+                constexpr std::string_view slots[] {"sf_slot_0_hits", "sf_slot_1_hits", "sf_slot_2_hits"};
+                metrics::count(slots[s]);
+            }
             return Candidate {found->second.chunkId, s, found->second.slot};
         }
     }
+    timer.finish("miss");
+    metrics::count("sf_miss");
     return std::nullopt;
 }
 
@@ -45,7 +56,9 @@ auto queryCandidate(const ResemblanceIndex &index, const ChunkId chunkId, const 
 //输出：无返回值；记录 ID 和 SF，同键保留最早者；Delta 管线由调用者保证只插入最终合格 Raw。
 auto insertSignature(ResemblanceIndex &index, const ChunkId chunkId, const SignatureResult &signature,
                      const std::string_view algorithm, const std::string_view profileId) -> void {
+    const metrics::Timer timer("sf_insert");
     validateIndex(index, chunkId, signature, algorithm, profileId);
+    metrics::count("sf_insert");
     index.insertedIds.insert(chunkId);
     for (std::size_t s = 0; s < SUPER_FEATURE_COUNT; ++s) {
         index.entries.emplace(signature.superFeatures[s], HistoricalSignature {chunkId, s});

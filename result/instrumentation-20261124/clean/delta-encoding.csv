@@ -1,0 +1,17 @@
+dataset,entry,mode,algorithm,attempts,encode_total_us,encode_total_ms,mean_us,p50_us,p95_us,p99_us
+DataSet_1,delta,benchmark,Finesse-Gear,0,,,,,,
+DataSet_1,delta,benchmark,NTransform-Gear,1,84.667,0.084667,84.667,,,
+DataSet_1,delta,profiling,Finesse-Gear,0,,,,,,
+DataSet_1,delta,profiling,NTransform-Gear,1,105.625,0.105625,105.625,105.625,105.625,105.625
+DataSet_2,delta,benchmark,Finesse-Gear,12424,224764.433,224.764433,18.0911488248551,,,
+DataSet_2,delta,benchmark,NTransform-Gear,19054,555097.285999999,555.097285999999,29.1328480109163,,,
+DataSet_2,delta,profiling,Finesse-Gear,12424,225929.193,225.929193,18.1848996297489,11.792,49.75,99.542
+DataSet_2,delta,profiling,NTransform-Gear,19054,554238.485,554.238485,29.0877760575207,15.917,109.5,282.041
+DataSet_3,delta,benchmark,Finesse-Gear,8597,197868.512999999,197.868512999999,23.0159954635337,,,
+DataSet_3,delta,benchmark,NTransform-Gear,14013,585403.609000001,585.403609000001,41.775751730536,,,
+DataSet_3,delta,profiling,Finesse-Gear,8597,198358.259000001,198.358259000001,23.0729625450739,15.458,60.917,125.416
+DataSet_3,delta,profiling,NTransform-Gear,14013,581949.696999999,581.949696999999,41.5292726040105,19.375,136.416,314.916
+DataSet_4,delta,benchmark,Finesse-Gear,140,15202.331,15.202331,108.588078571429,,,
+DataSet_4,delta,benchmark,NTransform-Gear,297,25949.93,25.94993,87.3735016835017,,,
+DataSet_4,delta,profiling,Finesse-Gear,140,8986.207,8.986207,64.1871928571429,67.375,96.583,99.917
+DataSet_4,delta,profiling,NTransform-Gear,297,20628.959,20.628959,69.4577744107743,62.416,184.584,242.875

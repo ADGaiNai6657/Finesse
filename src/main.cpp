@@ -10,22 +10,23 @@
 //输出：返回退出码：成功为 0，参数用法错误为 2，实验异常为 1；输出运行结果或错误提示。
 int main(const int argc, char **argv) {
     if (argc == 2 && std::string_view(argv[1]) == "--help") {
-        std::cout << "Usage: Finesse --config <file> | --delta-config <file>\nFinesse-Gear / NTransform-Gear: SF microbenchmark or recoverable in-memory Delta pipeline.\n";
+        std::cout << "Usage: Finesse --config <file> | --delta-config <file> [--instrumentation off|benchmark|profiling]\nFinesse-Gear / NTransform-Gear: SF microbenchmark or recoverable in-memory Delta pipeline.\n";
         return 0;
     }
-    if (argc != 3 || (std::string_view(argv[1]) != "--config" && std::string_view(argv[1]) != "--delta-config")) {
-        std::cerr << "Usage: Finesse --config <file> | --delta-config <file>\n";
+    if ((argc != 3 && argc != 5) || (argc == 5 && std::string_view(argv[3]) != "--instrumentation") || (std::string_view(argv[1]) != "--config" && std::string_view(argv[1]) != "--delta-config")) {
+        std::cerr << "Usage: Finesse --config <file> | --delta-config <file> [--instrumentation off|benchmark|profiling]\n";
         return 2;
     }
     try {
+        const auto mode = argc == 5 ? metrics::parseMode(argv[4]) : metrics::Mode::Benchmark;
         if (std::string_view(argv[1]) == "--delta-config") {
             const auto config = loadDeltaExperimentConfig(argv[2]);
-            runDeltaExperiment(config);
+            runDeltaExperiment(config, mode);
             std::cout << "Completed recoverable Delta pipeline: " << config.outputDirectory << '\n';
             return 0;
         }
         const auto config = loadExperimentConfig(argv[2]);
-        runExperiment(config);
+        runExperiment(config, mode);
         std::cout << "Completed: " << config.outputDirectory << '\n';
         return 0;
     } catch (const std::exception &error) {

@@ -1,0 +1,3 @@
+experiment_id,algorithm,unique_original_bytes,raw_bytes,delta_bytes,logical_encoded_bytes,raw_chunks,delta_chunks,dcr,saving_ratio
+ds1-delta-benchmark-1795512434190209-56537,Finesse-Gear,179742046,179742046,0,179742046,17483,0,1,0
+ds1-delta-benchmark-1795512434190209-56537,NTransform-Gear,179742046,179731174,3669,179734843,17482,1,1.00004007570196,4.00740959630559e-05
